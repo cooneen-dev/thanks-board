@@ -2,11 +2,7 @@
   "available": true,
   "count": 39,
   "window_days": 14,
-  "fetched_at": "2026-09-03T11:17:59+00:00",
-  "status": {
-    "ok": true,
-    "last_success_at": "2026-09-03T11:17:59+00:00"
-  },
+  "fetched_at": "2026-09-03T11:23:01+00:00",
   "thanks": [
     {
       "recipient": "Kerry Monaghan",
@@ -29,14 +25,6 @@
       "giver": "Ryan McClintock",
       "badge": "Results",
       "message": "Thanks for your amazing creative work, as part of the VIA team - making our work with getting the values more exposure much easier!",
-      "date": "03/09/2026",
-      "date_iso": "2026-09-03T00:00:00"
-    },
-    {
-      "recipient": "Lovemore Jonasi",
-      "giver": "Aaron Quinn",
-      "badge": "Ownership",
-      "message": "Took ownership with tool box talk to explain pallet use per customer/opertaion and pallet truck operation",
       "date": "03/09/2026",
       "date_iso": "2026-09-03T00:00:00"
     },
@@ -77,6 +65,14 @@
       "giver": "Ryan McClintock",
       "badge": "Ownership",
       "message": "The Newsletter looks fab - well done!",
+      "date": "03/09/2026",
+      "date_iso": "2026-09-03T00:00:00"
+    },
+    {
+      "recipient": "Lovemore Jonasi",
+      "giver": "Aaron Quinn",
+      "badge": "Ownership",
+      "message": "Took ownership with tool box talk to explain pallet use per customer/opertaion and pallet truck operation",
       "date": "03/09/2026",
       "date_iso": "2026-09-03T00:00:00"
     },
@@ -225,18 +221,18 @@
       "date_iso": "2026-09-01T00:00:00"
     },
     {
-      "recipient": "Lovemore Jonasi",
-      "giver": "Megan Dooley",
-      "badge": "Results",
-      "message": "Thanks Lovemore for helping to turn around 2 x customer deliveries in such a short period of time.",
-      "date": "28/08/2026",
-      "date_iso": "2026-08-28T00:00:00"
-    },
-    {
       "recipient": "Victoria Marshall",
       "giver": "Aivaras Baltuskonis",
       "badge": "Teamwork",
       "message": "For doing amazing work with warehouse mobilization! You are a ⭐",
+      "date": "28/08/2026",
+      "date_iso": "2026-08-28T00:00:00"
+    },
+    {
+      "recipient": "Lovemore Jonasi",
+      "giver": "Megan Dooley",
+      "badge": "Results",
+      "message": "Thanks Lovemore for helping to turn around 2 x customer deliveries in such a short period of time.",
       "date": "28/08/2026",
       "date_iso": "2026-08-28T00:00:00"
     },
@@ -249,18 +245,18 @@
       "date_iso": "2026-08-28T00:00:00"
     },
     {
-      "recipient": "Bobby Beaumont",
-      "giver": "Bobby Samari",
-      "badge": "Teamwork",
-      "message": "Reslly good work on replen for Brand Threads thabk you so much",
-      "date": "27/08/2026",
-      "date_iso": "2026-08-27T00:00:00"
-    },
-    {
       "recipient": "Aaron Medley",
       "giver": "Bobby Samari",
       "badge": "Ownership",
       "message": "Thank you for taking all the Evri parcels to drop off at the hub on your way home",
+      "date": "27/08/2026",
+      "date_iso": "2026-08-27T00:00:00"
+    },
+    {
+      "recipient": "Bobby Beaumont",
+      "giver": "Bobby Samari",
+      "badge": "Teamwork",
+      "message": "Reslly good work on replen for Brand Threads thabk you so much",
       "date": "27/08/2026",
       "date_iso": "2026-08-27T00:00:00"
     },

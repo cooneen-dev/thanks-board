@@ -6,32 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Thanks Wall</title>
 
-<!--
-  Thanks Wall - full screen board for a TV.
 
-  One file, no build step, no login. Point a screen at it and leave it. It reads
-  two public portal endpoints and nothing else:
-
-      thanks.json       the board, left 70%
-      newsletter.json   the latest issue, right 30%
-
-  Everything is sized in rem against a viewport-scaled root, so the same file
-  fills a 1080p screen and a 4K one without changing a number. Nothing scrolls;
-  the boards trim themselves to whatever height they are given, and the
-  newsletter creeps upward on a loop instead.
-
-  If the newsletter endpoint is unreachable or has nothing published, that
-  column disappears and the board takes the full width again.
-
-  Optional query parameters, none of which are shown on screen:
-
-      ?api=http://localhost:20010/api/thanks   point at another box
-      ?news=http://localhost:20010/api/newsletter
-      ?refresh=120                             seconds between polls, default 60
-      ?theme=dark                              for a dim room
-      ?speed=5                                 seconds per card on the wall
-      ?newsspeed=26                            newsletter scroll, pixels/second
--->
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -590,7 +565,7 @@
   .card {
     position: relative;
     flex: 0 0 auto;
-    width: 19rem;
+    width: 21rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -632,7 +607,7 @@
   .cnames { min-width: 0; display: flex; flex-direction: column; }
 
   .crecip {
-    font-size: 0.92rem;
+    font-size: 1rem;
     font-weight: 800;
     color: var(--ink);
     line-height: 1.25;
@@ -681,8 +656,8 @@
   /* Four lines, then the browser adds the ellipsis. */
   .cmsg {
     margin-top: 0.15rem;
-    font-size: 0.8rem;
-    line-height: 1.42;
+    font-size: 0.94rem;
+    line-height: 1.4;
     color: var(--ink);
     display: -webkit-box;
     -webkit-line-clamp: 4;
@@ -715,7 +690,7 @@
   }
 
   .ntitle {
-    font-size: 1.02rem;
+    font-size: 1.24rem;
     font-weight: 900;
     line-height: 1.28;
     letter-spacing: -0.01em;
@@ -728,7 +703,7 @@
 
   .nmeta {
     margin-top: 0.3rem;
-    font-size: 0.66rem;
+    font-size: 0.74rem;
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -770,16 +745,16 @@
   .nhalf { padding: 0.85rem 0 1.4rem; }
 
   .nb-paragraph {
-    margin: 0 0 0.62rem;
-    font-size: 0.81rem;
-    line-height: 1.5;
+    margin: 0 0 0.7rem;
+    font-size: 0.97rem;
+    line-height: 1.52;
     color: var(--ink);
     overflow-wrap: anywhere;
   }
 
   .nb-heading {
-    margin: 0.9rem 0 0.4rem;
-    font-size: 0.74rem;
+    margin: 0.95rem 0 0.4rem;
+    font-size: 0.88rem;
     font-weight: 900;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -788,31 +763,31 @@
 
   /* No marker: the issues come through with their own emoji on each line. */
   .nb-bullet {
-    margin: 0 0 0.38rem;
-    padding-left: 0.55rem;
+    margin: 0 0 0.45rem;
+    padding-left: 0.6rem;
     border-left: 2px solid var(--line);
-    font-size: 0.8rem;
-    line-height: 1.45;
+    font-size: 0.96rem;
+    line-height: 1.48;
     color: var(--ink);
   }
 
   .nb-quote {
-    margin: 0 0 0.22rem;
-    padding: 0.5rem 0.6rem;
+    margin: 0 0 0.28rem;
+    padding: 0.6rem 0.7rem;
     border-left: 2px solid var(--orange);
     border-radius: 0 0.4rem 0.4rem 0;
     background: var(--panel-2);
-    font-size: 0.79rem;
-    line-height: 1.46;
+    font-size: 0.95rem;
+    line-height: 1.5;
     color: var(--ink);
     overflow-wrap: anywhere;
   }
 
   /* The name under a story. Sits tight to the quote it belongs to. */
   .nb-byline {
-    margin: 0 0 0.75rem;
-    padding-left: 0.6rem;
-    font-size: 0.7rem;
+    margin: 0 0 0.85rem;
+    padding-left: 0.7rem;
+    font-size: 0.84rem;
     font-weight: 800;
     color: var(--orange);
   }
@@ -877,9 +852,7 @@
       <p class="sub" id="sub">Loading the last fourteen days</p>
     </div>
 
-    <!-- The KPIs live in the header band rather than a row of their own. The
-         header had empty middle to spare and the panels below needed the
-         height far more. -->
+    
     <div class="stats" id="stats"></div>
 
     <div class="now">
@@ -889,7 +862,7 @@
     </div>
   </header>
 
-  <!-- Starts full width. The newsletter column earns its 30% by answering. -->
+  
   <div class="stage stage--solo" id="stage">
     <div class="main">
 
@@ -922,7 +895,7 @@
 
     </div>
 
-    <!-- The right 30%. Hidden until /api/newsletter answers with an issue. -->
+    
     <aside class="panel news" id="news" hidden>
       <h2>Latest newsletter <span class="nedition" id="nedition"></span></h2>
       <div class="nhead">
