@@ -2,8 +2,24 @@
   "available": true,
   "count": 39,
   "window_days": 14,
-  "fetched_at": "2026-09-03T11:33:04+00:00",
+  "fetched_at": "2026-09-03T11:58:11+00:00",
   "thanks": [
+    {
+      "recipient": "Aaron Medley",
+      "giver": "Ryan McClintock",
+      "badge": "Teamwork",
+      "message": "Thanks for connecting me with our DPD account manager, to help get data for our HMRC Body Armour tender submission",
+      "date": "03/09/2026",
+      "date_iso": "2026-09-03T00:00:00"
+    },
+    {
+      "recipient": "Aoife McCrystal",
+      "giver": "Ryan McClintock",
+      "badge": "Ownership",
+      "message": "The Newsletter looks fab - well done!",
+      "date": "03/09/2026",
+      "date_iso": "2026-09-03T00:00:00"
+    },
     {
       "recipient": "Kerry Monaghan",
       "giver": "Ryan McClintock",
@@ -53,22 +69,6 @@
       "date_iso": "2026-09-03T00:00:00"
     },
     {
-      "recipient": "Aaron Medley",
-      "giver": "Ryan McClintock",
-      "badge": "Teamwork",
-      "message": "Thanks for connecting me with our DPD account manager, to help get data for our HMRC Body Armour tender submission",
-      "date": "03/09/2026",
-      "date_iso": "2026-09-03T00:00:00"
-    },
-    {
-      "recipient": "Aoife McCrystal",
-      "giver": "Ryan McClintock",
-      "badge": "Ownership",
-      "message": "The Newsletter looks fab - well done!",
-      "date": "03/09/2026",
-      "date_iso": "2026-09-03T00:00:00"
-    },
-    {
       "recipient": "Lovemore Jonasi",
       "giver": "Aaron Quinn",
       "badge": "Ownership",
@@ -91,6 +91,22 @@
       "message": "Thanks for all your help with the HMRC Body Armour tender submission!",
       "date": "03/09/2026",
       "date_iso": "2026-09-03T00:00:00"
+    },
+    {
+      "recipient": "Claire Flanagan",
+      "giver": "Isobel Akien",
+      "badge": "Teamwork",
+      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
+      "date": "02/09/2026",
+      "date_iso": "2026-09-02T00:00:00"
+    },
+    {
+      "recipient": "Lucy Curran",
+      "giver": "Isobel Akien",
+      "badge": "Teamwork",
+      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
+      "date": "02/09/2026",
+      "date_iso": "2026-09-02T00:00:00"
     },
     {
       "recipient": "Marlene Bogue",
@@ -165,22 +181,6 @@
       "date_iso": "2026-09-02T00:00:00"
     },
     {
-      "recipient": "Claire Flanagan",
-      "giver": "Isobel Akien",
-      "badge": "Teamwork",
-      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
-      "date": "02/09/2026",
-      "date_iso": "2026-09-02T00:00:00"
-    },
-    {
-      "recipient": "Lucy Curran",
-      "giver": "Isobel Akien",
-      "badge": "Teamwork",
-      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
-      "date": "02/09/2026",
-      "date_iso": "2026-09-02T00:00:00"
-    },
-    {
       "recipient": "Siobhán Twomey",
       "giver": "Matthew Potts",
       "badge": "Teamwork",
@@ -197,18 +197,18 @@
       "date_iso": "2026-09-02T00:00:00"
     },
     {
-      "recipient": "Kerry Monaghan",
-      "giver": "Neville McIlwrath",
-      "badge": "Ownership",
-      "message": "Hi Kerry - thank you for taking on the co-ordinating of the content for the newsletter - an excellent read with loads of info and photos! Well done!",
-      "date": "01/09/2026",
-      "date_iso": "2026-09-01T00:00:00"
-    },
-    {
       "recipient": "Aoife McCrystal",
       "giver": "Neville McIlwrath",
       "badge": "Ownership",
       "message": "Hi Aoife - thanks for taking on the newsletter and doing a great job on it - loads of info and photos, all nicely presented! Well done!",
+      "date": "01/09/2026",
+      "date_iso": "2026-09-01T00:00:00"
+    },
+    {
+      "recipient": "Kerry Monaghan",
+      "giver": "Neville McIlwrath",
+      "badge": "Ownership",
+      "message": "Hi Kerry - thank you for taking on the co-ordinating of the content for the newsletter - an excellent read with loads of info and photos! Well done!",
       "date": "01/09/2026",
       "date_iso": "2026-09-01T00:00:00"
     },
@@ -285,6 +285,14 @@
       "date_iso": "2026-08-27T00:00:00"
     },
     {
+      "recipient": "Victoria Marshall",
+      "giver": "Charlene Meegan",
+      "badge": "Positivity",
+      "message": "It was a great pleasure to work with people who consistently stepped onto the green platform and rose to the challenges you faced throughout the Wrexham project. I could easily highlight many of the values you demonstrated — taking ownership of tasks and challenges, remaining positive and smiling through the pressures, and and, most importantly, deliver the RESULT. You should all be incredibly pro…",
+      "date": "21/08/2026",
+      "date_iso": "2026-08-21T00:00:00"
+    },
+    {
       "recipient": "Marlene Bogue",
       "giver": "Charlene Meegan",
       "badge": "Positivity",
@@ -294,14 +302,6 @@
     },
     {
       "recipient": "Aaron Quinn",
-      "giver": "Charlene Meegan",
-      "badge": "Positivity",
-      "message": "It was a great pleasure to work with people who consistently stepped onto the green platform and rose to the challenges you faced throughout the Wrexham project. I could easily highlight many of the values you demonstrated — taking ownership of tasks and challenges, remaining positive and smiling through the pressures, and and, most importantly, deliver the RESULT. You should all be incredibly pro…",
-      "date": "21/08/2026",
-      "date_iso": "2026-08-21T00:00:00"
-    },
-    {
-      "recipient": "Victoria Marshall",
       "giver": "Charlene Meegan",
       "badge": "Positivity",
       "message": "It was a great pleasure to work with people who consistently stepped onto the green platform and rose to the challenges you faced throughout the Wrexham project. I could easily highlight many of the values you demonstrated — taking ownership of tasks and challenges, remaining positive and smiling through the pressures, and and, most importantly, deliver the RESULT. You should all be incredibly pro…",
