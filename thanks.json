@@ -2,12 +2,20 @@
   "available": true,
   "count": 39,
   "window_days": 14,
-  "fetched_at": "2026-09-03T10:57:53+00:00",
+  "fetched_at": "2026-09-03T11:12:58+00:00",
   "status": {
     "ok": true,
-    "last_success_at": "2026-09-03T10:57:53+00:00"
+    "last_success_at": "2026-09-03T11:12:58+00:00"
   },
   "thanks": [
+    {
+      "recipient": "David Rogers",
+      "giver": "Ryan McClintock",
+      "badge": "Teamwork",
+      "message": "Thanks for all your help with the HMRC Body Armour tender submission!",
+      "date": "03/09/2026",
+      "date_iso": "2026-09-03T00:00:00"
+    },
     {
       "recipient": "Kerry Monaghan",
       "giver": "Ryan McClintock",
@@ -29,14 +37,6 @@
       "giver": "Ryan McClintock",
       "badge": "Results",
       "message": "Thanks for your amazing creative work, as part of the VIA team - making our work with getting the values more exposure much easier!",
-      "date": "03/09/2026",
-      "date_iso": "2026-09-03T00:00:00"
-    },
-    {
-      "recipient": "David Rogers",
-      "giver": "Ryan McClintock",
-      "badge": "Teamwork",
-      "message": "Thanks for all your help with the HMRC Body Armour tender submission!",
       "date": "03/09/2026",
       "date_iso": "2026-09-03T00:00:00"
     },
@@ -113,22 +113,6 @@
       "date_iso": "2026-09-02T00:00:00"
     },
     {
-      "recipient": "Elaine Edwards",
-      "giver": "Isobel Akien",
-      "badge": "Teamwork",
-      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
-      "date": "02/09/2026",
-      "date_iso": "2026-09-02T00:00:00"
-    },
-    {
-      "recipient": "Melissa Primrose",
-      "giver": "Isobel Akien",
-      "badge": "Teamwork",
-      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
-      "date": "02/09/2026",
-      "date_iso": "2026-09-02T00:00:00"
-    },
-    {
       "recipient": "Clive Moore",
       "giver": "Matthew Potts",
       "badge": "Teamwork",
@@ -141,6 +125,22 @@
       "giver": "Matthew Potts",
       "badge": "Teamwork",
       "message": "For all of the help on the recent Norway tender",
+      "date": "02/09/2026",
+      "date_iso": "2026-09-02T00:00:00"
+    },
+    {
+      "recipient": "Elaine Edwards",
+      "giver": "Isobel Akien",
+      "badge": "Teamwork",
+      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
+      "date": "02/09/2026",
+      "date_iso": "2026-09-02T00:00:00"
+    },
+    {
+      "recipient": "Melissa Primrose",
+      "giver": "Isobel Akien",
+      "badge": "Teamwork",
+      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
       "date": "02/09/2026",
       "date_iso": "2026-09-02T00:00:00"
     },
