@@ -656,18 +656,23 @@
   /* Four lines, then the browser adds the ellipsis. */
   .cmsg {
     margin-top: 0.15rem;
-    font-size: 1.12rem;
+    font-size: 1.03rem;
     line-height: 1.38;
     color: var(--ink);
     display: -webkit-box;
-    -webkit-line-clamp: 6;
+    -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     overflow: hidden;
     overflow-wrap: anywhere;
+    /* The one part of a card allowed to give way. Without this it pushes the
+       date off the bottom whenever a message runs long. */
+    flex-shrink: 1;
+    min-height: 0;
   }
 
   .cdate {
     margin-top: auto;
+    flex-shrink: 0;
     padding-top: 0.3rem;
     font-size: 0.66rem;
     font-weight: 700;
