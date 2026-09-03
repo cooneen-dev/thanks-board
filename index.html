@@ -453,7 +453,11 @@
 
   .valgrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    /* Low enough that all six values fit one row at the board's scale. Higher
+       and the sixth wraps onto a line of its own, which reads as a mistake.
+       Still auto-fit, so a seventh value People HR starts issuing lands
+       alongside them rather than forcing a fixed six-column layout. */
+    grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
     gap: 0.55rem;
     padding: 0.6rem 0.7rem 0.7rem;
   }
