@@ -2,7 +2,7 @@
   "available": true,
   "count": 39,
   "window_days": 14,
-  "fetched_at": "2026-09-03T12:18:17+00:00",
+  "fetched_at": "2026-09-03T12:43:24+00:00",
   "thanks": [
     {
       "recipient": "Kerry Monaghan",
@@ -25,6 +25,22 @@
       "giver": "Ryan McClintock",
       "badge": "Results",
       "message": "Thanks for your amazing creative work, as part of the VIA team - making our work with getting the values more exposure much easier!",
+      "date": "03/09/2026",
+      "date_iso": "2026-09-03T00:00:00"
+    },
+    {
+      "recipient": "Hannah McIlroy",
+      "giver": "Ryan McClintock",
+      "badge": "Ownership",
+      "message": "Thanks again and well done for all that you are doing with DPP, including the possibility of an exciting pilot programme, through PCIAW!",
+      "date": "03/09/2026",
+      "date_iso": "2026-09-03T00:00:00"
+    },
+    {
+      "recipient": "Isobel Akien",
+      "giver": "Ryan McClintock",
+      "badge": "Teamwork",
+      "message": "Thanks for all your help with the HMRC Body Armour tender submission!",
       "date": "03/09/2026",
       "date_iso": "2026-09-03T00:00:00"
     },
@@ -77,22 +93,6 @@
       "date_iso": "2026-09-03T00:00:00"
     },
     {
-      "recipient": "Hannah McIlroy",
-      "giver": "Ryan McClintock",
-      "badge": "Ownership",
-      "message": "Thanks again and well done for all that you are doing with DPP, including the possibility of an exciting pilot programme, through PCIAW!",
-      "date": "03/09/2026",
-      "date_iso": "2026-09-03T00:00:00"
-    },
-    {
-      "recipient": "Isobel Akien",
-      "giver": "Ryan McClintock",
-      "badge": "Teamwork",
-      "message": "Thanks for all your help with the HMRC Body Armour tender submission!",
-      "date": "03/09/2026",
-      "date_iso": "2026-09-03T00:00:00"
-    },
-    {
       "recipient": "Marlene Bogue",
       "giver": "Isobel Akien",
       "badge": "Teamwork",
@@ -118,6 +118,22 @@
     },
     {
       "recipient": "Melissa Primrose",
+      "giver": "Isobel Akien",
+      "badge": "Teamwork",
+      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
+      "date": "02/09/2026",
+      "date_iso": "2026-09-02T00:00:00"
+    },
+    {
+      "recipient": "Siobhán Twomey",
+      "giver": "Matthew Potts",
+      "badge": "Teamwork",
+      "message": "For all of the help on the recent Norway tender",
+      "date": "02/09/2026",
+      "date_iso": "2026-09-02T00:00:00"
+    },
+    {
+      "recipient": "Hannah McIlroy",
       "giver": "Isobel Akien",
       "badge": "Teamwork",
       "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
@@ -181,26 +197,18 @@
       "date_iso": "2026-09-02T00:00:00"
     },
     {
-      "recipient": "Siobhán Twomey",
-      "giver": "Matthew Potts",
-      "badge": "Teamwork",
-      "message": "For all of the help on the recent Norway tender",
-      "date": "02/09/2026",
-      "date_iso": "2026-09-02T00:00:00"
-    },
-    {
-      "recipient": "Hannah McIlroy",
-      "giver": "Isobel Akien",
-      "badge": "Teamwork",
-      "message": "Thank you to everyone who got involved with the HMRC tender. It was a tight turnaround to get everything ready for submission and everyone got stuck in to help however they could!",
-      "date": "02/09/2026",
-      "date_iso": "2026-09-02T00:00:00"
-    },
-    {
       "recipient": "Kerry Monaghan",
       "giver": "Neville McIlwrath",
       "badge": "Ownership",
       "message": "Hi Kerry - thank you for taking on the co-ordinating of the content for the newsletter - an excellent read with loads of info and photos! Well done!",
+      "date": "01/09/2026",
+      "date_iso": "2026-09-01T00:00:00"
+    },
+    {
+      "recipient": "Hugh Kelly",
+      "giver": "Aivaras Baltuskonis",
+      "badge": "Trust",
+      "message": "Thank you for taking a very good care of IT queries whilst the team was away!",
       "date": "01/09/2026",
       "date_iso": "2026-09-01T00:00:00"
     },
@@ -213,12 +221,12 @@
       "date_iso": "2026-09-01T00:00:00"
     },
     {
-      "recipient": "Hugh Kelly",
-      "giver": "Aivaras Baltuskonis",
-      "badge": "Trust",
-      "message": "Thank you for taking a very good care of IT queries whilst the team was away!",
-      "date": "01/09/2026",
-      "date_iso": "2026-09-01T00:00:00"
+      "recipient": "Kirsty Watson",
+      "giver": "Megan Dooley",
+      "badge": "Results",
+      "message": "Thanks Kirsty for helping to turn around 2 x customer deliveries in such a short period of time.",
+      "date": "28/08/2026",
+      "date_iso": "2026-08-28T00:00:00"
     },
     {
       "recipient": "Victoria Marshall",
@@ -235,30 +243,6 @@
       "message": "Thanks Lovemore for helping to turn around 2 x customer deliveries in such a short period of time.",
       "date": "28/08/2026",
       "date_iso": "2026-08-28T00:00:00"
-    },
-    {
-      "recipient": "Kirsty Watson",
-      "giver": "Megan Dooley",
-      "badge": "Results",
-      "message": "Thanks Kirsty for helping to turn around 2 x customer deliveries in such a short period of time.",
-      "date": "28/08/2026",
-      "date_iso": "2026-08-28T00:00:00"
-    },
-    {
-      "recipient": "Aaron Medley",
-      "giver": "Bobby Samari",
-      "badge": "Ownership",
-      "message": "Thank you for taking all the Evri parcels to drop off at the hub on your way home",
-      "date": "27/08/2026",
-      "date_iso": "2026-08-27T00:00:00"
-    },
-    {
-      "recipient": "Bobby Beaumont",
-      "giver": "Bobby Samari",
-      "badge": "Teamwork",
-      "message": "Reslly good work on replen for Brand Threads thabk you so much",
-      "date": "27/08/2026",
-      "date_iso": "2026-08-27T00:00:00"
     },
     {
       "recipient": "Laura Marticorena",
@@ -285,6 +269,22 @@
       "date_iso": "2026-08-27T00:00:00"
     },
     {
+      "recipient": "Aaron Medley",
+      "giver": "Bobby Samari",
+      "badge": "Ownership",
+      "message": "Thank you for taking all the Evri parcels to drop off at the hub on your way home",
+      "date": "27/08/2026",
+      "date_iso": "2026-08-27T00:00:00"
+    },
+    {
+      "recipient": "Bobby Beaumont",
+      "giver": "Bobby Samari",
+      "badge": "Teamwork",
+      "message": "Reslly good work on replen for Brand Threads thabk you so much",
+      "date": "27/08/2026",
+      "date_iso": "2026-08-27T00:00:00"
+    },
+    {
       "recipient": "Marlene Bogue",
       "giver": "Charlene Meegan",
       "badge": "Positivity",
@@ -301,7 +301,7 @@
       "date_iso": "2026-08-21T00:00:00"
     },
     {
-      "recipient": "Victoria Marshall",
+      "recipient": "Aivaras Baltuskonis",
       "giver": "Charlene Meegan",
       "badge": "Positivity",
       "message": "It was a great pleasure to work with people who consistently stepped onto the green platform and rose to the challenges you faced throughout the Wrexham project. I could easily highlight many of the values you demonstrated — taking ownership of tasks and challenges, remaining positive and smiling through the pressures, and and, most importantly, deliver the RESULT. You should all be incredibly pro…",
@@ -309,7 +309,7 @@
       "date_iso": "2026-08-21T00:00:00"
     },
     {
-      "recipient": "Aivaras Baltuskonis",
+      "recipient": "Victoria Marshall",
       "giver": "Charlene Meegan",
       "badge": "Positivity",
       "message": "It was a great pleasure to work with people who consistently stepped onto the green platform and rose to the challenges you faced throughout the Wrexham project. I could easily highlight many of the values you demonstrated — taking ownership of tasks and challenges, remaining positive and smiling through the pressures, and and, most importantly, deliver the RESULT. You should all be incredibly pro…",
