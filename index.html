@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex, nofollow" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thanks Wall</title>
+
+<!--
+  Thanks Wall - full screen board for a TV.
+
+  One file, no build step, no login. Point a screen at it and leave it. It reads
+  two public portal endpoints and nothing else:
+
+      thanks.json       the board, left 70%
+      newsletter.json   the latest issue, right 30%
+
+  Everything is sized in rem against a viewport-scaled root, so the same file
+  fills a 1080p screen and a 4K one without changing a number. Nothing scrolls;
+  the boards trim themselves to whatever height they are given, and the
+  newsletter creeps upward on a loop instead.
+
+  If the newsletter endpoint is unreachable or has nothing published, that
+  column disappears and the board takes the full width again.
+
+  Optional query parameters, none of which are shown on screen:
+
+      ?api=http://localhost:20010/api/thanks   point at another box
+      ?news=http://localhost:20010/api/newsletter
+      ?refresh=120                             seconds between polls, default 60
+      ?theme=dark                              for a dim room
+      ?speed=5                                 seconds per card on the wall
+      ?newsspeed=26                            newsletter scroll, pixels/second
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+<style>
+  /* ------------------------------------------------------------------ theme
+     The portal's palette. Warm off-white, Cooneen orange, and the six company
+     value colours that People HR issues badges for. */
+
+  :root {
+    --orange:    #e87722;
+    --ink:       #2c2c2c;
+    --ink-soft:  #6f6a64;
+    --ink-faint: #a8a29a;
+
+    --page:      linear-gradient(140deg, #fffdf7 0%, #fff 55%, #fffaf2 100%);
+    --panel:     #ffffff;
+    --panel-2:   #fffdfb;
+    --line:      #ede8e2;
+    --line-soft: #f4efe8;
+    --track:     #f1ece6;
+
+    --shadow:    0 1px 4px rgba(0,0,0,.05);
+    --shadow-lg: 0 6px 22px rgba(0,0,0,.07);
+    --radius:    0.85rem;
+  }
+
+  html[data-theme="dark"] {
+    --orange:    #ff9142;
+    --ink:       #f3efe9;
+    --ink-soft:  #a9a29a;
+    --ink-faint: #6f6862;
+
+    --page:      linear-gradient(140deg, #17140f 0%, #121110 55%, #191510 100%);
+    --panel:     #1e1b17;
+    --panel-2:   #221e19;
+    --line:      #322c25;
+    --line-soft: #2a251f;
+    --track:     #2b261f;
+
+    --shadow:    0 1px 4px rgba(0,0,0,.4);
+    --shadow-lg: 0 6px 26px rgba(0,0,0,.5);
+  }
+
+  /* One knob scales the whole board. A 1366 laptop lands near 15px, a 1080p
+     screen near 19px, a 4K panel hits the 24px ceiling. */
+  html {
+    font-size: clamp(12px, 0.72vw + 5px, 24px);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    cursor: none;              /* nothing here is clickable on a wall screen */
+  }
+
+  h1, h2 { margin: 0; }
+
+  .screen {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1.3rem;
+    padding: 1.3rem 1.7rem 1.4rem;
+  }
+
+  /* ----------------------------------------------------------------- header */
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .brand { flex: 0 0 auto; }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  h1 em { font-style: normal; color: var(--orange); }
+
+  .sub {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .now { text-align: right; flex-shrink: 0; }
+
+  .clock {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .date {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink-faint);
+  }
+
+  /* Only ever on screen when something is wrong. A healthy board says nothing
+     about itself and shows the date instead. */
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+    padding: 0.16rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+  .live[hidden] { display: none; }
+
+  .live.stale { color: #b06000; border-color: #f2a900; background: rgba(242,169,0,.10); }
+  .live.down  { color: #c2255c; border-color: #c2255c; background: rgba(194,37,92,.09); }
+
+  html[data-theme="dark"] .live.stale { color: #f2a900; background: rgba(242,169,0,.14); }
+  html[data-theme="dark"] .live.down  { color: #ff6b93; border-color: #ff6b93; background: rgba(255,107,147,.13); }
+
+  .live i {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+
+  @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+
+  /* ------------------------------------------------------------------ tiles */
+
+  /* Sits between the title and the clock and takes the slack in the middle.
+     auto-fit rather than four fixed columns, so it folds rather than crushes.
+     The header spans the full width, so the newsletter column does not
+     narrow it, but a small screen still does. */
+  .stats {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: 0.55rem;
+    min-width: 0;
+  }
+
+  .tile {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    padding: 0.45rem 0.7rem 0.5rem;
+    box-shadow: var(--shadow);
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* A thin colour edge on the left, so the row of tiles is not four identical
+     white rectangles. */
+  .tile::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--tint, var(--orange));
+  }
+
+  .tile .v {
+    display: block;
+    font-size: 1.55rem;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--orange);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* A name needs room where a count does not. */
+  .tile .v.word {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--ink);
+    padding: 0.3rem 0 0.27rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .tile .v.word span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .crown {
+    width: 1rem; height: 1rem;
+    flex-shrink: 0;
+    fill: #e8a020;
+    animation: bob 3.2s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%,100% { transform: translateY(0) rotate(-6deg); }
+    50%     { transform: translateY(-2px) rotate(6deg); }
+  }
+
+  .tile .l {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ------------------------------------------------------------------ panels */
+
+  /* ------------------------------------------------------------------ stage
+     Everything below the header lives in here: the board on the left, the
+     latest newsletter on the right. Nothing inside .main is sized in absolute
+     terms, so it reflows into the narrower column on its own.
+
+     With no newsletter to show, .stage--solo hands the whole width back to the
+     board rather than leaving a column of empty panel on screen. */
+  .stage {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+    gap: 0.85rem;
+  }
+
+  .stage--solo { grid-template-columns: minmax(0, 1fr); }
+
+  /* This gap is the air between the three bands: values, the two boards, and
+     the wall. It reads much tighter than the same number does between panels
+     side by side, so it is deliberately larger than the horizontal gaps. */
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-height: 0;
+  }
+
+  .mid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 0.85rem;
+  }
+
+  /* Each column is a bounded box the full height of the row, and the panels
+     inside it hug their content at the top. That is what gives three givers a
+     three-row panel instead of a tall one with a white hole under the last
+     name, while still capping the column so nothing can run off screen.
+     A percentage max-height on the panels cannot do this job: against an
+     auto-sized row it does not resolve, so it silently caps nothing. */
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* Panels divide the column height between them rather than each hugging
+       its own content, so both columns end on the same line. shareColumn()
+       weights the split by how many rows each one holds. */
+    flex: 1 1 0;
+    overflow: hidden;
+  }
+
+  .panel > h2 {
+    flex-shrink: 0;
+    padding: 0.7rem 1rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  /* Rows grow into whatever height the panel was given, so a three-name list
+     fills its panel with three taller rows instead of three normal ones and a
+     gap. Once they hit their max height, any remainder is spread between them
+     as spacing rather than pooling at the bottom. */
+  .body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0.7rem 0.8rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.55rem;
+  }
+
+  /* ------------------------------------------------------------ ranked rows */
+
+  .row {
+    display: grid;
+    grid-template-columns: 1.3rem 2.2rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+    /* Grows into spare height, but never shrinks below a readable row: that
+       floor is what makes an over-long list overflow visibly, which is how
+       fitBodies() knows to drop rows instead of letting them be squashed. */
+    flex: 1 1 auto;
+    min-height: 3.3rem;
+    max-height: 5.6rem;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.55rem 0.8rem;
+    animation: rowIn 0.35s ease both;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .row .pos {
+    font-size: 0.78rem;
+    font-weight: 900;
+    color: var(--ink-faint);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .row:nth-child(1) .pos { color: #e8a020; font-size: 0.92rem; }
+  .row:nth-child(2) .pos { color: #9aa0a6; font-size: 0.86rem; }
+  .row:nth-child(3) .pos { color: #c98a5e; font-size: 0.84rem; }
+
+  .av {
+    width: 2.2rem; height: 2.2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* Named .rmain, not .main: the page layout already owns .main for the three
+     bands, and a second rule of the same name silently won and collapsed the
+     gaps between them. */
+  .rmain { min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+
+  .nm {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.22rem; overflow: hidden; max-height: 1.1rem; }
+
+  .chip {
+    padding: 0.05rem 0.42rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .trk {
+    display: block;
+    height: 0.22rem;
+    border-radius: 999px;
+    background: var(--track);
+    overflow: hidden;
+  }
+  .trk i { display: block; height: 100%; border-radius: 999px; min-width: 3px; }
+
+  .ct {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    padding-left: 0.15rem;
+  }
+
+  /* Givers list: no badge breakdown, so a slimmer row. */
+  .row--slim {
+    grid-template-columns: 1.3rem 1.9rem minmax(0, 1fr) auto;
+    min-height: 3rem;
+    max-height: 5rem;
+  }
+  .row--slim .av { width: 1.9rem; height: 1.9rem; font-size: 0.68rem; }
+
+  /* ----------------------------------------------------------------- values
+     The badges People HR issues are the company values, so this is the point
+     of the board rather than a statistic on it. Full width, its own row, one
+     card per value. auto-fit means it reflows from six across to three by two
+     on its own now that the newsletter has taken its 30%. */
+
+  .panel--values { flex: 0 0 auto; }
+
+  .valgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 0.55rem;
+    padding: 0.6rem 0.7rem 0.7rem;
+  }
+
+  .value {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.55rem 0.7rem 0.6rem;
+    overflow: hidden;
+  }
+
+  .value::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--vc);
+  }
+
+  .vtop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .vtop svg { width: 1.45rem; height: 1.45rem; fill: var(--vc); opacity: 0.9; flex-shrink: 0; }
+
+  .vn {
+    font-size: 1.6rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--vc);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vl {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Each value's volume against the busiest one, so the leader's bar is full
+     and a value nobody is being thanked for reads as visibly short from
+     across the room. The number says how many; the bar says how that compares. */
+  .vt {
+    display: block;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: var(--track);
+    overflow: hidden;
+  }
+  .vt i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    min-width: 3px;
+    background: var(--vc);
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* A value nobody was thanked for still holds its place, just quietly. */
+  .value--zero { opacity: 0.42; }
+
+  /* ------------------------------------------------------------------- wall */
+
+  .wall {
+    flex-shrink: 0;
+    height: 12.4rem;
+    overflow: hidden;
+    /* Cards fade out at both edges instead of being chopped off. */
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+  }
+
+  .track {
+    display: flex;
+    width: max-content;
+    height: 100%;
+    animation-name: roll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  /* Two identical halves, so shifting by half the track loops with no seam. The
+     trailing padding stands in for the gap, otherwise the join lands short. */
+  .half { display: flex; gap: 0.8rem; padding-right: 0.8rem; }
+
+  @keyframes roll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* Too few cards to fill the row: sit them still and centred. */
+  .wall.still { -webkit-mask-image: none; mask-image: none; }
+  .wall.still .track { animation: none; margin: 0 auto; }
+
+  .card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 19rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--orange);
+    border-radius: 0.65rem;
+    padding: 0.75rem 0.85rem 0.7rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .card > * { flex-shrink: 0; }
+
+  /* One glyph per company value, sunk into the corner at low opacity so it
+     reads as texture rather than another thing to look at. */
+  .glyph {
+    position: absolute;
+    right: -0.15rem;
+    bottom: -0.15rem;
+    width: 5.4rem;
+    height: 5.4rem;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .card > *:not(.glyph) { position: relative; z-index: 1; }
+
+  .chead {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .chead .av { width: 2.1rem; height: 2.1rem; font-size: 0.72rem; }
+
+  .cnames { min-width: 0; display: flex; flex-direction: column; }
+
+  .crecip {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cgiver {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cchips { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.1rem; }
+
+  .cbadge {
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .clatest {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .clatest svg { width: 0.62rem; height: 0.62rem; fill: currentColor; }
+
+  /* Four lines, then the browser adds the ellipsis. */
+  .cmsg {
+    margin-top: 0.15rem;
+    font-size: 0.8rem;
+    line-height: 1.42;
+    color: var(--ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .cdate {
+    margin-top: auto;
+    padding-top: 0.3rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--ink-faint);
+  }
+
+  /* ------------------------------------------------------------ newsletter
+     The right hand column. A masthead that stays put, then the issue itself
+     creeping upward on a loop, because nothing on a wall screen can scroll and
+     a newsletter is far too long to fit. Same two-halves trick as the wall,
+     turned ninety degrees. */
+
+  .news { min-height: 0; }
+  .news[hidden] { display: none; }   /* .panel is display:flex, which wins over [hidden] */
+
+  .nhead {
+    flex-shrink: 0;
+    padding: 0.7rem 0.9rem 0.65rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .ntitle {
+    font-size: 1.02rem;
+    font-weight: 900;
+    line-height: 1.28;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .nmeta {
+    margin-top: 0.3rem;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* The edition rides in the panel heading, which already has the right
+     casing and colour for it. */
+  .nedition {
+    float: right;
+    color: var(--orange);
+    letter-spacing: 0.06em;
+  }
+
+  .nbody {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 0.9rem;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 1.6rem, #000 calc(100% - 1.6rem), transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 1.6rem, #000 calc(100% - 1.6rem), transparent);
+  }
+
+  .ntrack {
+    animation-name: ncreep;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes ncreep {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+  }
+
+  /* Short enough to fit: no loop, no mask, just sit there. */
+  .nbody.still { -webkit-mask-image: none; mask-image: none; }
+  .nbody.still .ntrack { animation: none; }
+
+  .nhalf { padding: 0.85rem 0 1.4rem; }
+
+  .nb-paragraph {
+    margin: 0 0 0.62rem;
+    font-size: 0.81rem;
+    line-height: 1.5;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  .nb-heading {
+    margin: 0.9rem 0 0.4rem;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  /* No marker: the issues come through with their own emoji on each line. */
+  .nb-bullet {
+    margin: 0 0 0.38rem;
+    padding-left: 0.55rem;
+    border-left: 2px solid var(--line);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  .nb-quote {
+    margin: 0 0 0.22rem;
+    padding: 0.5rem 0.6rem;
+    border-left: 2px solid var(--orange);
+    border-radius: 0 0.4rem 0.4rem 0;
+    background: var(--panel-2);
+    font-size: 0.79rem;
+    line-height: 1.46;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  /* The name under a story. Sits tight to the quote it belongs to. */
+  .nb-byline {
+    margin: 0 0 0.75rem;
+    padding-left: 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--orange);
+  }
+
+  /* ----------------------------------------------------------------- states */
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+    background: var(--page);
+    z-index: 10;
+    padding: 2rem;
+  }
+  .overlay[hidden] { display: none; }
+  .overlay .mark { font-size: 3rem; line-height: 1; margin-bottom: 0.4rem; }
+  .overlay .big { font-size: 1.5rem; font-weight: 800; color: var(--ink); }
+  .overlay .small { font-size: 0.9rem; color: var(--ink-soft); max-width: 30rem; }
+
+  /* Warm-up shimmer while the first poll is in flight. */
+  .ghost {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    animation: breathe 1.5s ease-in-out infinite;
+  }
+  .body > .ghost { height: 2.9rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track { animation: none; }
+    .row, .crown, .live i, .ghost { animation: none; }
+  }
+
+  /* A phone or a portrait panel is not the target, but it should not be broken
+     either: stack it and let it scroll. */
+  @media (max-aspect-ratio: 1/1), (max-width: 820px) {
+    body { height: auto; overflow: auto; cursor: auto; }
+    .screen { height: auto; }
+    .top { flex-wrap: wrap; }
+    .stats { flex: 1 1 100%; order: 3; grid-template-columns: repeat(2, 1fr); }
+    .stage { grid-template-columns: minmax(0, 1fr); }
+    .mid { grid-template-columns: minmax(0, 1fr); }
+    .panel { min-height: 14rem; }
+    .panel--values { min-height: 0; }
+    .wall { height: 13rem; }
+    .news { min-height: 26rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <header class="top">
+    <div class="brand">
+      <h1>Thanks <em>Wall</em></h1>
+      <p class="sub" id="sub">Loading the last fourteen days</p>
+    </div>
+
+    <!-- The KPIs live in the header band rather than a row of their own. The
+         header had empty middle to spare and the panels below needed the
+         height far more. -->
+    <div class="stats" id="stats"></div>
+
+    <div class="now">
+      <div class="clock" id="clock"></div>
+      <div class="date" id="date"></div>
+      <div class="live" id="live" hidden><i></i><span id="livetext"></span></div>
+    </div>
+  </header>
+
+  <!-- Starts full width. The newsletter column earns its 30% by answering. -->
+  <div class="stage stage--solo" id="stage">
+    <div class="main">
+
+      <section class="panel panel--values">
+        <h2>Our values in action</h2>
+        <div class="valgrid" id="values"></div>
+      </section>
+
+      <div class="mid">
+        <div class="col">
+          <section class="panel">
+            <h2>Most thanked</h2>
+            <div class="body" id="board">
+              <div class="ghost"></div><div class="ghost"></div><div class="ghost"></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="col">
+          <section class="panel">
+            <h2>Most generous</h2>
+            <div class="body" id="givers"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="wall" id="wall">
+        <div class="track" id="track"></div>
+      </div>
+
+    </div>
+
+    <!-- The right 30%. Hidden until /api/newsletter answers with an issue. -->
+    <aside class="panel news" id="news" hidden>
+      <h2>Latest newsletter <span class="nedition" id="nedition"></span></h2>
+      <div class="nhead">
+        <div class="ntitle" id="ntitle"></div>
+        <div class="nmeta" id="nmeta"></div>
+      </div>
+      <div class="nbody" id="nbody">
+        <div class="ntrack" id="ntrack"></div>
+      </div>
+    </aside>
+
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="mark" id="ov-mark">&#9888;</div>
+  <div class="big" id="ov-big"></div>
+  <div class="small" id="ov-small"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ------------------------------------------------------------------ config
+
+  var q = new URLSearchParams(location.search);
+
+  var API      = q.get("api")  || "thanks.json";
+  var NEWS_API = q.get("news") || "newsletter.json";
+  var REFRESH  = Math.max(0, parseInt(q.get("refresh") || "60", 10) || 0);
+  var SPEED    = Math.max(1, parseFloat(q.get("speed") || "5") || 5);
+  // Pixels per second for the newsletter creep. Slow enough to read a line
+  // before it leaves, quick enough to get round a long issue.
+  var NEWS_SPEED = Math.max(4, parseFloat(q.get("newsspeed") || "26") || 26);
+
+  if (q.get("theme") === "dark") document.documentElement.dataset.theme = "dark";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // The company values People HR issues badges for. Anything new from People HR
+  // still renders, just in the neutral colour.
+  var BADGE_COLORS = {
+    Teamwork:   "#e87722",
+    Results:    "#2f9e44",
+    Ownership:  "#1971c2",
+    Positivity: "#f2a900",
+    Wellbeing:  "#c2255c",
+    Trust:      "#7048e8"
+  };
+  var BADGE_FALLBACK = "#6b7280";
+
+  var BADGE_ICONS = {
+    Teamwork:   "M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
+    Results:    "M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4L2 9.4h7.6z",
+    Ownership:  "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1.2 15.2L7 12.4l1.4-1.4 2.4 2.4 5.2-5.2L17.4 9l-6.6 7.2z",
+    Positivity: "M12 2a10 10 0 100 20 10 10 0 000-20zM8.5 9a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm4 0a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM12 18c-2.6 0-4.8-1.7-5.6-4h11.2c-.8 2.3-3 4-5.6 4z",
+    Wellbeing:  "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
+    Trust:      "M11 2.5L4 6v5.5c0 4.6 3 8.8 7 10 4-1.2 7-5.4 7-10V6l-7-3.5zm5 9a5 5 0 01-10 0V7.2l5-2.5 5 2.5v4.3z"
+  };
+  // The company values, in the order the portal lists them. This is the board's
+  // running order too, so a value keeps its position on screen whether it was
+  // handed out fifty times this fortnight or not at all.
+  var VALUES = ["Teamwork", "Results", "Ownership", "Positivity", "Wellbeing", "Trust"];
+
+  var ICON_FALLBACK = BADGE_ICONS.Results;
+  var CROWN = "M2.5 8.5l4.2 2.9L12 4l5.3 7.4 4.2-2.9L19.6 20H4.4L2.5 8.5z";
+  var STAR  = "M12 2l2.6 6.6L21.5 9.6l-5 4.6 1.3 6.9L12 17.8 6.2 21.1l1.3-6.9-5-4.6 6.9-1z";
+
+  function color(badge) { return BADGE_COLORS[badge] || BADGE_FALLBACK; }
+  function icon(badge)  { return BADGE_ICONS[badge]  || ICON_FALLBACK; }
+
+  // ------------------------------------------------------------------- utils
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function initials(name) {
+    var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  // Avatars for people carry no badge, so give each name a stable hue instead.
+  // Same person, same colour, on every screen and after every refresh.
+  function nameColor(name) {
+    var h = 0;
+    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+    return "hsl(" + h + ",42%,46%)";
+  }
+
+  // The backend stamps UTC but the ISO string can arrive without a zone marker.
+  // Left alone the browser reads a bare stamp as local time, shifting every
+  // date by the current offset.
+  function toDate(iso) {
+    if (!iso) return null;
+    var s = String(iso);
+    if (!/[zZ]|[+-]\d\d:?\d\d$/.test(s)) s += "Z";
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function ago(iso) {
+    var d = toDate(iso);
+    if (!d) return "";
+    var mins = Math.round((Date.now() - d.getTime()) / 60000);
+    if (mins < 1)  return "just now";
+    if (mins < 60) return mins + " min ago";
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24)  return hrs === 1 ? "an hour ago" : hrs + " hours ago";
+    var days = Math.round(hrs / 24);
+    if (days === 1) return "yesterday";
+    if (days < 7)   return days + " days ago";
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "long" });
+  }
+
+  // Both columns are the same height, so the only question is how the stacked
+  // panels divide theirs. Splitting it evenly would give three givers the same
+  // slab as eight badges, so weight each panel by the number of rows it holds.
+  // The panels then land on the same bottom line as the board opposite them.
+  function shareColumn() {
+    var panels = document.querySelectorAll(".col .panel");
+    for (var i = 0; i < panels.length; i++) {
+      var body = panels[i].querySelector(".body");
+      panels[i].style.flexGrow = Math.max(1, body ? body.children.length : 1);
+    }
+  }
+
+  // Rows have a minimum height, so a list too long for its panel overflows
+  // rather than compressing to nothing. Drop whole trailing rows until the
+  // rest fit, instead of clipping one through the middle.
+  function fitBodies() {
+    var bodies = document.querySelectorAll(".body");
+    for (var i = 0; i < bodies.length; i++) {
+      var b = bodies[i], guard = 60;
+      while (b.scrollHeight > b.clientHeight + 1 && b.children.length > 1 && guard--) {
+        b.removeChild(b.lastElementChild);
+      }
+    }
+  }
+
+  function layout() { shareColumn(); fitBodies(); }
+
+  // ------------------------------------------------------------------ render
+
+  function tile(value, label, tint, crowned) {
+    var inner = crowned
+      ? '<span class="v word"><svg class="crown" viewBox="0 0 24 24" aria-hidden="true"><path d="' +
+        CROWN + '"/></svg><span>' + esc(value) + "</span></span>"
+      : '<span class="v">' + esc(value) + "</span>";
+    return '<div class="tile" style="--tint:' + tint + '">' + inner +
+           '<span class="l">' + esc(label) + "</span></div>";
+  }
+
+  function renderStats(d) {
+    var top = (d.recipients && d.recipients[0]) || null;
+    var busiest = (d.badges && d.badges[0]) || null;
+    $("stats").innerHTML =
+      tile(d.count, d.window_days ? "Thanks in " + d.window_days + " days" : "Thanks given", "#e87722") +
+      tile(d.people_thanked, "People thanked", "#2f9e44") +
+      tile(d.people_giving, "People saying thanks", "#1971c2") +
+      (top
+        ? tile(top.name, "Most thanked, " + top.count + " times", "#f2a900", true)
+        : tile(busiest ? busiest.badge : "-", "Top badge", "#f2a900"));
+  }
+
+  function rankRow(i, name, count, max, chips, slim) {
+    var width = Math.max(4, Math.round((count / max) * 100));
+    var tint  = chips && chips.length ? color(chips[0].badge) : "var(--orange)";
+    var body  = chips && chips.length
+      ? '<div class="chips">' + chips.slice(0, 4).map(function (b) {
+          return '<span class="chip" style="background:' + color(b.badge) + '">' +
+                 esc(b.badge) + " " + esc(b.count) + "</span>";
+        }).join("") + "</div>"
+      : '<span class="trk"><i style="width:' + width + "%;background:" + tint + '"></i></span>';
+
+    return '<div class="row' + (slim ? " row--slim" : "") +
+             '" style="animation-delay:' + Math.min(i, 9) * 0.04 + 's">' +
+             '<div class="pos">' + (i + 1) + "</div>" +
+             '<div class="av" style="background:' + nameColor(name) + '">' +
+               esc(initials(name)) + "</div>" +
+             '<div class="rmain"><div class="nm">' + esc(name) + "</div>" + body + "</div>" +
+             '<div class="ct">' + esc(count) + "</div>" +
+           "</div>";
+  }
+
+  function renderBoard(el, rows, opts) {
+    opts = opts || {};
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="small" style="padding:.6rem;color:var(--ink-faint)">Nothing yet.</div>';
+      return;
+    }
+    var max = rows[0].count || 1;
+    el.innerHTML = rows.map(function (r, i) {
+      return rankRow(i, r.name, r.count, max, opts.badges ? r.badges : null, opts.slim);
+    }).join("");
+  }
+
+  // Every value holds its place, including the ones nobody was thanked for.
+  //
+  // The endpoint only reports badges that were actually given, so on a quiet
+  // fortnight a value would silently disappear off a board whose whole job is
+  // to show the values. Merge the six known ones against what came back, keep
+  // the zeros, and append anything new People HR has started issuing so a
+  // seventh value appears here on its own.
+  function renderValues(el, badges) {
+    var counts = {};
+    var names  = VALUES.slice();
+
+    (badges || []).forEach(function (b) {
+      counts[b.badge] = b.count;
+      if (names.indexOf(b.badge) === -1) names.push(b.badge);
+    });
+
+    var max = 1;
+    names.forEach(function (n) { max = Math.max(max, counts[n] || 0); });
+
+    el.innerHTML = names.map(function (n) {
+      var c = counts[n] || 0;
+      return '<div class="value' + (c ? "" : " value--zero") +
+               '" style="--vc:' + color(n) + '">' +
+               '<div class="vtop">' +
+                 '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + icon(n) + '"/></svg>' +
+                 '<span class="vn">' + c + "</span>" +
+               "</div>" +
+               '<div class="vl">' + esc(n) + "</div>" +
+               '<span class="vt"><i style="width:' + Math.round((c / max) * 100) + '%"></i></span>' +
+             "</div>";
+    }).join("");
+  }
+
+  function cardHTML(t, latest) {
+    var c = color(t.badge);
+    var when = t.date_iso ? ago(t.date_iso) : (t.date || "");
+    return '' +
+      '<div class="card" style="border-top-color:' + c + '">' +
+        '<svg class="glyph" viewBox="0 0 24 24" fill="' + c + '" aria-hidden="true"><path d="' +
+          icon(t.badge) + '"/></svg>' +
+        '<div class="chead">' +
+          '<div class="av" style="background:' + c + '">' + esc(initials(t.recipient)) + "</div>" +
+          '<div class="cnames">' +
+            '<div class="crecip">' + esc(t.recipient) + "</div>" +
+            (t.giver ? '<div class="cgiver">from ' + esc(t.giver) + "</div>" : "") +
+          "</div>" +
+        "</div>" +
+        '<div class="cchips">' +
+          (latest
+            ? '<span class="clatest"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' +
+              STAR + '"/></svg>Latest</span>'
+            : "") +
+          '<span class="cbadge" style="background:' + c + '">' + esc(t.badge || "Thanks") + "</span>" +
+        "</div>" +
+        (t.message ? '<div class="cmsg">' + esc(t.message) + "</div>" : "") +
+        (when ? '<div class="cdate">' + esc(when) + "</div>" : "") +
+      "</div>";
+  }
+
+  function renderWall(items) {
+    var wall = $("wall"), track = $("track");
+    if (!items.length) { track.innerHTML = ""; return; }
+
+    var half = items.map(function (t, i) { return cardHTML(t, i === 0); }).join("");
+    track.innerHTML = '<div class="half">' + half + "</div>" +
+                      '<div class="half" aria-hidden="true">' + half + "</div>";
+
+    // Half the track is one full set of cards. If that already fits on screen
+    // there is nothing to scroll past, so hold it still and centre it.
+    var oneSet = track.firstElementChild.getBoundingClientRect().width;
+    var fits   = oneSet <= wall.getBoundingClientRect().width;
+
+    wall.classList.toggle("still", fits);
+    track.style.animationDuration = fits ? "" : (items.length * SPEED) + "s";
+  }
+
+  // -------------------------------------------------------------- newsletter
+
+  // The endpoint hands over typed blocks alongside the html precisely so a
+  // screen like this does not have to parse a newsletter. A short paragraph
+  // straight after a quote is the name under the story, so it is set as one
+  // rather than as another paragraph of body copy.
+  var BYLINE_MAX = 90;
+
+  function blocksHTML(blocks) {
+    var out = [];
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      var text = String(b.text || "").trim();
+      if (!text) continue;
+
+      if (b.type === "quote") {
+        out.push('<div class="nb-quote">' + esc(text) + "</div>");
+        var next = blocks[i + 1];
+        if (next && next.type === "paragraph" &&
+            String(next.text || "").trim().length <= BYLINE_MAX) {
+          out.push('<div class="nb-byline">' + esc(String(next.text).trim()) + "</div>");
+          i++;
+        }
+        continue;
+      }
+
+      if (b.type === "heading") { out.push('<div class="nb-heading">' + esc(text) + "</div>"); continue; }
+      if (b.type === "bullet")  { out.push('<div class="nb-bullet">'  + esc(text) + "</div>"); continue; }
+      out.push('<div class="nb-paragraph">' + esc(text) + "</div>");
+    }
+    return out.join("");
+  }
+
+  // An issue written before the blocks existed, or one that arrived without
+  // them, still has its plain text to fall back on.
+  function blocksFromText(text) {
+    return String(text || "").split(/\n{2,}/).map(function (line) {
+      var t = line.trim();
+      return { type: t.indexOf("- ") === 0 ? "bullet" : "paragraph",
+               text: t.indexOf("- ") === 0 ? t.slice(2) : t };
+    }).filter(function (b) { return b.text; });
+  }
+
+  function newsDate(iso) {
+    var d = toDate(iso);
+    return d ? d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : "";
+  }
+
+  var newsShowing = false;
+  var newsSeen    = null;   // id and stamp of what is on screen, so a poll that
+                            // brings back the same issue does not restart it
+
+  function newsVisible(on) {
+    if (newsShowing === on) return false;
+    newsShowing = on;
+    $("news").hidden = !on;
+    $("stage").classList.toggle("stage--solo", !on);
+    return true;
+  }
+
+  function renderNews(n) {
+    var stamp = n.id + "|" + (n.updated_at || n.published_at || "");
+    var changed = newsVisible(true);
+    if (newsSeen === stamp) return changed;
+    newsSeen = stamp;
+
+    $("nedition").textContent = n.edition || "";
+    $("ntitle").textContent   = n.title || "";
+    $("nmeta").textContent    = [newsDate(n.published_at), n.author]
+      .filter(Boolean).join("  ·  ");
+
+    var blocks = (n.blocks && n.blocks.length) ? n.blocks : blocksFromText(n.text);
+    var half   = blocksHTML(blocks);
+    var body   = $("nbody"), track = $("ntrack");
+
+    track.innerHTML = '<div class="nhalf">' + half + "</div>" +
+                      '<div class="nhalf" aria-hidden="true">' + half + "</div>";
+    remeasureNews();
+    return changed;
+  }
+
+  // One half is the whole issue. If that already fits there is nothing to
+  // creep past, so hold it still. Worth redoing whenever the rem scale or the
+  // font changes underneath it, since the pace is timed off the height.
+  function remeasureNews() {
+    if (!newsShowing) return;
+    var body = $("nbody"), track = $("ntrack");
+    if (!track.firstElementChild) return;
+
+    var oneSet = track.firstElementChild.getBoundingClientRect().height;
+    var fits   = oneSet <= body.getBoundingClientRect().height;
+
+    body.classList.toggle("still", fits);
+    track.style.animationDuration = fits ? "" : Math.round(oneSet / NEWS_SPEED) + "s";
+  }
+
+  var newsBusy = false;
+
+  function loadNews() {
+    if (newsBusy) return;
+    newsBusy = true;
+
+    var url = NEWS_API + (NEWS_API.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now();
+
+    fetch(url, { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        var changed = (d && d.available && d.current)
+          ? renderNews(d.current)
+          : newsVisible(false);
+        // The column appearing or going away changes how wide the board is,
+        // so the trimmed lists and the wall have to be measured again.
+        if (changed) { layout(); if (lastThanks) renderWall(lastThanks); }
+      })
+      .catch(function () {
+        // A dropped poll leaves whatever is already up there. A screen that
+        // never had a newsletter is already showing the board full width.
+      })
+      .then(function () { newsBusy = false; });
+  }
+
+  // ------------------------------------------------------------------ states
+
+  function overlay(mark, big, small) {
+    if (!big) { $("overlay").hidden = true; return; }
+    $("ov-mark").innerHTML = mark;
+    $("ov-big").textContent = big;
+    $("ov-small").textContent = small || "";
+    $("overlay").hidden = false;
+  }
+
+  // Healthy is silent. The pill only appears for a problem, and takes the
+  // date's place rather than adding a line, so the header never reflows.
+  function live(cls, text) {
+    var pill = $("live");
+    if (!cls) {
+      pill.hidden = true;
+      $("date").hidden = false;
+      return;
+    }
+    pill.className = "live " + cls;
+    $("livetext").textContent = text;
+    pill.hidden = false;
+    $("date").hidden = true;
+  }
+
+  var REASONS = {
+    "no-file":    "The thanks file has not been written yet.",
+    "unreadable": "The thanks file could not be read.",
+    "empty":      "There are no thanks in the current window.",
+    "error":      "The portal could not build the thanks list."
+  };
+
+  function minutesSince(iso) {
+    var d = toDate(iso);
+    return d ? (Date.now() - d.getTime()) / 60000 : null;
+  }
+
+  // The watcher polls every 5 minutes. Anything past this and it has almost
+  // certainly stopped, because a *running* watcher rewrites its status file on
+  // every poll whether the thanks changed or not.
+  var STALE_AFTER_MINS = 20;
+
+  // What the corner light means.
+  //
+  // The honest signal for "is this screen current" is status.last_success_at,
+  // from the watcher's health file, which is rewritten on every poll. It is NOT
+  // fetched_at: the watcher only rewrites thanks.json when the thanks actually
+  // change, so on a quiet day fetched_at is days old while the feed is fine.
+  //
+  // Nor is status.ok enough on its own. If the service is killed outright it
+  // stops writing the health file entirely, leaving ok:true frozen at the last
+  // good poll. Only the age of last_success_at catches that, so it is checked
+  // even when the watcher last said it was happy.
+  function renderHealth(d) {
+    var s   = d.status;
+    var age = s ? minutesSince(s.last_success_at) : null;
+
+    if (s && s.ok === false) {
+      live("stale", s.last_success_at
+        ? "Feed failing, data from " + ago(s.last_success_at)
+        : "Feed failing");
+      return;
+    }
+
+    if (age !== null && age > STALE_AFTER_MINS) {
+      live("stale", "Last checked " + ago(s.last_success_at));
+      return;
+    }
+
+    if (age !== null) { live("", "Updated " + ago(s.last_success_at)); return; }
+
+    // No health file next to the data. Fall back to the data's own stamp, and
+    // label it for what it is: when the thanks last changed, not when the
+    // portal last checked.
+    live(d.fetched_at ? "" : "stale",
+         d.fetched_at ? "Newest thanks " + ago(d.fetched_at) : "Live");
+  }
+
+  // -------------------------------------------------------------------- poll
+
+  var busy = false;
+  // The last set of thanks that rendered, so the wall can be rebuilt at a new
+  // width when the newsletter column comes or goes.
+  var lastThanks = null;
+
+  function load() {
+    if (busy) return;
+    busy = true;
+
+    // The endpoint sends a 60 second public Cache-Control, which is right for
+    // the network but would otherwise hand a refresh the same bytes back.
+    var url = API + (API.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now();
+
+    fetch(url, { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d || d.available === false) {
+          overlay("&#9749;", "No thanks to show yet",
+                  REASONS[(d && d.reason) || ""] || "Nothing is available right now.");
+          live("stale", "Waiting for data");
+          return;
+        }
+
+        overlay(null);
+
+        renderStats(d);
+        renderBoard($("board"),  d.recipients, { badges: true });
+        renderBoard($("givers"), d.givers,     { slim: true });
+        renderValues($("values"), d.badges);
+        layout();
+        lastThanks = d.thanks || [];
+        renderWall(lastThanks);
+
+        $("sub").textContent =
+          d.count + " thanks" +
+          (d.window_days ? " in the last " + d.window_days + " days" : "") +
+          ", across " + d.people_thanked + " people";
+
+        renderHealth(d);
+      })
+      .catch(function () {
+        // A dropped poll is not worth blanking a wall screen over. Keep the
+        // last good board up and mark it, and only take over the screen if
+        // there was never anything there to begin with.
+        live("down", "Reconnecting");
+        if (!$("stats").children.length) {
+          overlay("&#128246;", "Thanks wall is offline",
+                  "Waiting for the portal to answer. This screen will come back on its own.");
+        }
+      })
+      .then(function () { busy = false; });
+  }
+
+  // ------------------------------------------------------------------- clock
+
+  function tick() {
+    var now = new Date();
+    $("clock").textContent = now.toLocaleTimeString(undefined, {
+      hour: "2-digit", minute: "2-digit"
+    });
+    $("date").textContent = now.toLocaleDateString(undefined, {
+      weekday: "long", day: "numeric", month: "long"
+    });
+  }
+  tick();
+  setInterval(tick, 15000);
+
+  // -------------------------------------------------------------------- boot
+
+  load();
+  loadNews();
+  if (REFRESH) {
+    setInterval(load, REFRESH * 1000);
+    // An issue is published every few weeks, so there is nothing to gain from
+    // asking as often as the thanks. Every tenth poll, and never under 5 min.
+    setInterval(loadNews, Math.max(300, REFRESH * 10) * 1000);
+  }
+
+  // Nunito arrives from Google Fonts after first paint. The swap changes row
+  // heights a little, which is enough to push a column over the edge after
+  // layout() has already measured. Measure again once the real font is in,
+  // and once more shortly after in case the web font never arrives and the
+  // fallback is what we are actually laying out with.
+  function settle() { layout(); remeasureNews(); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
+  setTimeout(settle, 1200);
+
+  // A resize changes the rem scale, so the trimmed lists and the wall need
+  // recomputing. Debounced, because dragging a window fires this constantly.
+  var resizing;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizing);
+    resizing = setTimeout(function () {
+      load();
+      remeasureNews();
+    }, 350);
+  });
+
+  // Nothing on a wall screen should sleep, but a browser tab that has been
+  // backgrounded comes back stale. Catch up on the way in.
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) { load(); loadNews(); }
+  });
+})();
+</script>
+
+</body>
+</html>
