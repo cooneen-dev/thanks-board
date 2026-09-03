@@ -821,6 +821,62 @@
   .overlay .big { font-size: 1.5rem; font-weight: 800; color: var(--ink); }
   .overlay .small { font-size: 0.9rem; color: var(--ink-soft); max-width: 30rem; }
 
+  /* The key screen. Only ever seen on a published copy, where the data files
+     beside this page are sealed and nothing can be drawn until one is opened.
+     It sits above the offline overlay: a board waiting for a key is not a
+     board with a network problem, and only one of the two is worth reading. */
+
+  .gate {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    text-align: center;
+    background: var(--page);
+    z-index: 20;
+    padding: 2rem;
+    cursor: auto;
+  }
+  .gate[hidden] { display: none; }
+  .gate .mark { font-size: 3rem; line-height: 1; }
+  .gate .big { font-size: 1.5rem; font-weight: 800; color: var(--ink); }
+  .gate .small { font-size: 0.9rem; color: var(--ink-soft); max-width: 26rem; }
+  .gate form { display: flex; gap: 0.5rem; margin-top: 0.2rem; }
+  .gate input {
+    width: 20rem;
+    max-width: 60vw;
+    padding: 0.6rem 0.8rem;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    outline: none;
+  }
+  .gate input:focus { border-color: var(--orange); }
+  .gate button {
+    padding: 0.6rem 1.2rem;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    background: var(--orange);
+    border: 0;
+    border-radius: 0.6rem;
+    cursor: pointer;
+  }
+  .gate .err {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #c2255c;
+    min-height: 1.2rem;
+    max-width: 26rem;
+  }
+
   /* Warm-up shimmer while the first poll is in flight. */
   .ghost {
     background: var(--panel-2);
@@ -926,6 +982,18 @@
   <div class="small" id="ov-small"></div>
 </div>
 
+<div class="gate" id="gate" hidden>
+  <div class="mark">&#128274;</div>
+  <div class="big">Thanks Wall</div>
+  <div class="small">This board is sealed. Enter the key to open it on this screen.</div>
+  <form id="gate-form" autocomplete="off">
+    <input id="gate-key" type="password" placeholder="Key" aria-label="Key"
+           autocomplete="off" spellcheck="false" />
+    <button type="submit">Open</button>
+  </form>
+  <div class="err" id="gate-err"></div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -959,6 +1027,144 @@
   if (q.get("theme") === "dark") document.documentElement.dataset.theme = "dark";
 
   var $ = function (id) { return document.getElementById(id); };
+
+  // ------------------------------------------------------------- sealed data
+  //
+  // A published copy of this page sits beside two json files it cannot read.
+  // public_push seals them with AES-GCM before committing, so the repository
+  // can be public while the board is not. The key opens them here, in the
+  // browser, and is never sent anywhere.
+  //
+  //     ?key=...     what an unattended screen is pointed at
+  //     typed once   kept in this browser afterwards, so a reload is silent
+  //
+  // Whether a file is sealed is decided by what came back, never by
+  // configuration. A plain json answer is passed through untouched, which is
+  // the case on the wall inside: that screen talks to the portal directly,
+  // sees none of this, and is never asked for anything.
+
+  var KEY_STORE = "thanks-wall-key";
+
+  function storedKey() {
+    try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; }
+  }
+
+  function rememberKey(key) {
+    // A screen in kiosk mode with storage disabled still works for as long as
+    // it stays open, and one driven by ?key= never needs this at all.
+    try { localStorage.setItem(KEY_STORE, key); } catch (e) {}
+  }
+
+  var KEY = q.get("key") || storedKey();
+
+  // A key in the URL is what this screen was deliberately sent with, so it
+  // beats anything the browser happened to be holding, and replaces it.
+  if (q.get("key")) rememberKey(KEY);
+
+  function isSealed(d) {
+    return !!(d && d.alg === "AES-GCM" && d.ct && d.salt && d.nonce);
+  }
+
+  function b64bytes(text) {
+    var bin = atob(text), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  // Deriving the key is slow on purpose, that being the entire point of it, so
+  // it happens once and is kept rather than on every poll. The wrapper carries
+  // the salt and the iteration count, so if the publisher ever changes either
+  // this follows along without an edit here.
+  var derived = null;
+
+  function deriveKey(wrapper) {
+    var subtle = window.crypto && window.crypto.subtle;
+    if (!subtle) {
+      // Only available over https or on localhost. Worth saying plainly,
+      // because from the screen it otherwise looks like a rejected key.
+      var e = new Error("This page must be opened over https to unseal the board.");
+      e.fatal = true;
+      return Promise.reject(e);
+    }
+
+    var tag = wrapper.salt + "|" + wrapper.iter + "|" + KEY;
+    if (derived && derived.tag === tag) return derived.promise;
+
+    var promise = subtle
+      .importKey("raw", new TextEncoder().encode(KEY), "PBKDF2", false, ["deriveKey"])
+      .then(function (material) {
+        return subtle.deriveKey({
+          name:       "PBKDF2",
+          salt:       b64bytes(wrapper.salt),
+          iterations: wrapper.iter || 310000,
+          hash:       "SHA-256"
+        }, material, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      });
+
+    derived = { tag: tag, promise: promise };
+    return promise;
+  }
+
+  function unseal(wrapper) {
+    return deriveKey(wrapper).then(function (key) {
+      return window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: b64bytes(wrapper.nonce) }, key, b64bytes(wrapper.ct));
+    }).then(function (plain) {
+      return JSON.parse(new TextDecoder().decode(plain));
+    });
+  }
+
+  // Every read of a data file goes through here, so one file being sealed and
+  // the other not is a case nothing has to be told about.
+  function fetchJSON(url) {
+    return fetch(url, { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        if (!isSealed(d)) return d;
+        if (!KEY) { gate(true, ""); throw new Error("no key"); }
+
+        return unseal(d).then(function (opened) {
+          gate(false);
+          return opened;
+        }, function (e) {
+          // A refused key is not a network fault and polling will not mend it.
+          // Ask for one and let the polls keep failing quietly behind the gate.
+          gate(true, e && e.fatal ? e.message : "That key does not open this board.");
+          throw e;
+        });
+      });
+  }
+
+  function gate(show, message) {
+    var el = $("gate");
+    if (!show) { el.hidden = true; return; }
+
+    $("gate-err").textContent = message || "";
+    if (el.hidden) {
+      el.hidden = false;
+      $("gate-key").value = "";
+      $("gate-key").focus();
+    }
+  }
+
+  $("gate-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var typed = $("gate-key").value.trim();
+    if (!typed) return;
+
+    KEY = typed;
+    derived = null;
+    rememberKey(KEY);
+    $("gate-err").textContent = "Opening...";
+
+    // The polls are what actually test a key. A good one takes the gate down
+    // from inside fetchJSON, a bad one puts the message back.
+    load();
+    loadNews();
+  });
 
   // The company values People HR issues badges for. Anything new from People HR
   // still renders, just in the neutral colour.
@@ -1302,11 +1508,7 @@
 
     var url = NEWS_API + (NEWS_API.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now();
 
-    fetch(url, { cache: "no-store" })
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
+    fetchJSON(url)
       .then(function (d) {
         var changed = (d && d.available && d.current)
           ? renderNews(d.current)
@@ -1415,11 +1617,7 @@
     // the network but would otherwise hand a refresh the same bytes back.
     var url = API + (API.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now();
 
-    fetch(url, { cache: "no-store" })
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
+    fetchJSON(url)
       .then(function (d) {
         if (!d || d.available === false) {
           overlay("&#9749;", "No thanks to show yet",
