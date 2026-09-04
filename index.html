@@ -87,6 +87,7 @@
 
   .screen {
     height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
@@ -107,9 +108,9 @@
     color: var(--bar-ink);
   }
 
-  .brand { display: flex; align-items: center; gap: 0.6rem; }
+  .brand { flex: 0 0 auto; display: flex; align-items: center; gap: 0.6rem; }
 
-  .brand svg { width: 2.5rem; height: 1.3rem; display: block; }
+  .brand svg { height: 1.15rem; width: auto; display: block; color: var(--orange); }
   .brand .wm { line-height: 1; }
   .brand .wm b {
     display: block;
@@ -125,7 +126,7 @@
     color: var(--orange);
   }
 
-  .topright { text-align: right; line-height: 1.15; }
+  .topright { min-width: 0; text-align: right; line-height: 1.15; }
   .topright .ttl {
     font-size: 1.35rem;
     font-weight: 900;
@@ -138,7 +139,6 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--orange);
-    max-width: 34rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -149,6 +149,7 @@
   .recog {
     flex: 1 1 57%;
     min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
@@ -209,19 +210,24 @@
   .recogbody {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
     display: flex;
     gap: 0.7rem;
   }
 
+  /* minmax(0, 1fr) rather than 1fr: a plain fr will not shrink a track below
+     the width of what is in it, which is how one card ended up sitting over
+     the other instead of being made narrower. */
   .cards {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.7rem;
   }
 
-  .slot { min-width: 0; display: flex; }
+  .slot { min-width: 0; min-height: 0; overflow: hidden; display: flex; }
   .slot--empty { visibility: hidden; }
 
   /* ----------------------------------------------------------------- cards */
@@ -265,6 +271,9 @@
     letter-spacing: 0.13em;
     text-transform: uppercase;
     color: var(--c);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .crecip {
     font-size: 1.5rem;
@@ -288,14 +297,7 @@
     color: var(--ink-2);
     overflow: hidden;
   }
-  .cmsg span {
-    display: -webkit-box;
-    -webkit-line-clamp: 5;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .cmsg--md { font-size: 1.12rem; }
-  .cmsg--sm { font-size: 0.98rem; -webkit-line-clamp: 6; }
+  .cmsg span { display: block; }
 
   .cfoot {
     flex: 0 0 auto;
@@ -307,6 +309,12 @@
     border-top: 1px solid var(--line-soft);
     font-size: 0.8rem;
     color: var(--ink-soft);
+  }
+  .cfoot > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .cfoot b { color: var(--ink); font-weight: 800; }
   .cfoot .cdate { flex: 0 0 auto; font-weight: 700; color: var(--ink-faint); }
@@ -322,13 +330,18 @@
   /* ------------------------------------------------------------ stats rail */
 
   .stats {
-    flex: 0 0 14.5rem;
+    flex: 0 0 15.5rem;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
-    padding-left: 0.85rem;
+    gap: 0.5rem;
+    padding-left: 0.9rem;
     border-left: 1px solid var(--line);
   }
+  .stats > * { flex: 0 0 auto; }
+  .stats [hidden] { display: none; }
 
   .skicker {
     font-size: 0.65rem;
@@ -340,42 +353,63 @@
 
   .sbig { display: flex; align-items: baseline; gap: 0.4rem; }
   .sbig b {
-    font-size: 2.9rem;
+    font-size: 2.5rem;
     font-weight: 900;
     line-height: 0.9;
     color: var(--orange);
     font-variant-numeric: tabular-nums;
   }
   .sbig span { font-size: 0.95rem; font-weight: 800; }
-  .ssub { font-size: 0.76rem; color: var(--ink-soft); }
+  .ssub {
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-  .sbars { display: flex; flex-direction: column; gap: 0.28rem; }
+  .sbars {
+    flex: 0 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.22rem;
+    overflow: hidden;
+  }
+  /* Icon, name, bar and count on one line. Two lines per value pushed the last
+     of the six, and the names under them, off the bottom of the rail. */
   .sbar {
     display: grid;
-    grid-template-columns: 1.05rem 1fr auto;
+    grid-template-columns: 0.95rem 4.6rem minmax(1.5rem, 1fr) 1.1rem;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.76rem;
+    gap: 0.35rem;
+    font-size: 0.72rem;
     font-weight: 700;
   }
-  .sbar svg { width: 1.05rem; height: 1.05rem; fill: var(--c); }
-  .sbar .sn { color: var(--ink-2); }
+  .sbar svg { width: 0.95rem; height: 0.95rem; fill: var(--c); }
+  .sbar .sn {
+    color: var(--ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .sbar .sc {
+    text-align: right;
     font-weight: 900;
     color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
   }
-  .sbar--zero { opacity: 0.45; }
+  .sbar--zero { opacity: 0.4; }
   .strk {
-    grid-column: 2 / 4;
-    height: 0.3rem;
+    height: 0.28rem;
     border-radius: 999px;
     background: var(--track);
     overflow: hidden;
   }
   .strk i { display: block; height: 100%; border-radius: 999px; background: var(--c); }
 
-  .spair { display: flex; flex-direction: column; gap: 0.5rem; }
+  .spair { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.45rem; }
   .sname {
     font-size: 1rem;
     font-weight: 900;
@@ -386,7 +420,7 @@
   }
   .sname small { font-weight: 700; color: var(--ink-faint); }
 
-  .supd { margin-top: auto; font-size: 0.68rem; color: var(--ink-faint); }
+  .supd { font-size: 0.68rem; color: var(--ink-faint); }
 
   /* ------------------------------------------------------------ value band */
 
@@ -400,9 +434,23 @@
   }
   .band[hidden] { display: none; }
 
+  /* With nothing to cycle there is no second half, and a value stretched
+     across the whole width at the size it takes in half of one reads as a
+     mistake. Centre it, give it a measure, and take back the height the
+     cards can use. */
+  .band--solo { flex: 0 1 32%; }
+  .band--solo .vmain {
+    align-items: center;
+    text-align: center;
+    padding: 1.4rem 2rem;
+  }
+  .band--solo .vmain-text { max-width: 34ch; }
+
   .vmain {
-    flex: 1 1 58%;
+    flex: 1 1 52%;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -416,30 +464,35 @@
     font-weight: 900;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--orange);
+    color: var(--accent, var(--orange));
   }
 
+  /* Sized to the space it has rather than to how many characters it holds:
+     the panel is a fixed box and the text has to live inside it, whatever the
+     screen is and whatever the author wrote. */
   .vmain-text {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
     font-size: 2.5rem;
     font-weight: 900;
     line-height: 1.14;
     letter-spacing: -0.02em;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
-  .vmain-text--md { font-size: 1.85rem; -webkit-line-clamp: 5; }
-  .vmain-text--sm { font-size: 1.35rem; font-weight: 800; line-height: 1.3; -webkit-line-clamp: 6; }
+  .vmain-text span { display: block; white-space: pre-line; }
 
   .vflip {
-    flex: 1 1 42%;
+    flex: 1 1 48%;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     padding: 1.2rem 1.5rem;
-    background: var(--orange);
+    background: var(--accent, var(--orange));
     color: #fff;
   }
   .vflip[hidden] { display: none; }
@@ -448,6 +501,7 @@
   .vstage {
     flex: 1;
     min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -455,23 +509,34 @@
   }
   .vstage.in { animation: riseIn 0.5s cubic-bezier(.22,.8,.3,1) both; }
 
+  /* The label and the number share a line, so the passage underneath gets the
+     row the number used to have to itself. */
+  .vhead {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
   .vnum {
+    flex: 0 0 auto;
     font-size: 0.85rem;
     font-weight: 900;
     letter-spacing: 0.1em;
     color: rgba(255,255,255,.62);
+    font-variant-numeric: tabular-nums;
   }
   .vtext {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
     font-size: 1.5rem;
     font-weight: 800;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 6;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    line-height: 1.32;
   }
-  .vtext--md { font-size: 1.2rem; }
-  .vtext--sm { font-size: 0.98rem; font-weight: 700; -webkit-line-clamp: 8; }
+  .vtext span { display: block; white-space: pre-line; }
 
   .dots { flex: 0 0 auto; display: flex; gap: 0.3rem; }
   .dots i {
@@ -596,11 +661,8 @@
 
   <header class="top">
     <div class="brand">
-      <svg viewBox="0 0 60 30" aria-hidden="true">
-        <g fill="none" stroke="#e87722" stroke-width="5">
-          <circle cx="17" cy="15" r="11" />
-          <circle cx="40" cy="15" r="11" />
-        </g>
+      <svg viewBox="0 0 100.00 40.55" aria-hidden="true">
+        <path fill="currentColor" fill-rule="evenodd" d="M27.65 -0.00L31.18 0.15L33.13 0.48L35.42 1.10L37.99 2.18L40.11 3.46L41.70 4.77L42.98 6.10L44.41 8.13L45.27 9.89L45.91 11.84L46.28 13.69L46.25 14.84L41.26 20.05L39.36 22.26L48.82 16.17L50.44 14.98L52.73 13.60L52.92 13.37L56.63 11.05L56.71 10.88L66.04 4.77L68.20 3.53L71.55 1.99L73.94 1.15L77.30 0.39L80.92 0.00L85.87 0.30L87.81 0.73L89.75 1.36L91.25 1.98L93.83 3.53L95.05 4.51L96.29 5.74L97.60 7.51L98.64 9.36L99.34 11.22L99.78 13.07L99.93 15.02L99.90 17.49L99.63 19.35L99.25 20.76L98.11 23.76L96.13 27.30L95.00 28.89L93.46 30.66L90.67 33.30L88.06 35.25L84.63 37.26L82.06 38.43L79.59 39.26L77.30 39.85L74.47 40.32L71.29 40.47L67.84 40.21L65.64 39.74L63.56 39.05L60.99 37.81L58.36 35.87L56.71 34.10L55.71 32.69L54.62 30.48L53.86 27.92L53.61 25.97L54.42 24.82L60.43 18.55L60.69 18.08L33.75 35.73L29.93 37.81L27.39 38.82L24.82 39.60L22.26 40.15L20.30 40.37L17.84 40.47L15.66 40.37L13.43 40.05L10.95 39.42L9.36 38.80L7.40 37.81L6.18 37.01L4.79 35.87L3.56 34.63L2.48 33.22L1.03 30.48L0.49 28.89L0.07 26.68L-0.00 23.85L0.61 20.05L1.99 16.25L3.36 13.69L6.26 9.89L9.36 6.98L12.19 4.94L14.31 3.68L16.98 2.39L20.49 1.12L23.67 0.41L27.65 -0.00ZM24.56 8.74L22.35 9.14L20.11 9.89L18.55 10.64L16.49 11.93L15.05 13.07L13.49 14.66L12.29 16.25L11.14 18.46L10.60 20.19L10.24 22.35L10.42 25.00L10.85 26.33L11.57 27.68L12.90 29.24L14.59 30.48L15.90 31.10L18.29 31.72L21.11 31.80L23.60 31.45L24.82 31.11L27.27 30.12L30.43 28.09L32.34 26.33L34.26 23.76L35.46 21.38L36.09 18.73L36.06 16.25L35.46 14.13L34.24 12.10L32.52 10.51L31.18 9.73L29.95 9.24L27.39 8.70L24.56 8.74ZM78.09 8.74L75.62 9.23L74.20 9.69L72.00 10.71L69.83 12.10L67.97 13.69L66.86 14.93L65.61 16.70L64.73 18.46L64.20 20.05L63.83 22.44L63.96 24.75L64.40 26.28L65.02 27.48L66.06 28.89L68.14 30.48L69.43 31.10L72.00 31.73L74.73 31.80L77.79 31.27L80.83 30.13L84.02 28.09L85.91 26.33L87.72 23.94L88.91 21.73L89.59 19.35L89.75 17.58L89.69 16.70L89.12 14.31L88.40 12.90L87.82 12.10L86.89 11.13L85.87 10.34L83.57 9.25L80.83 8.70L78.09 8.74Z" />
       </svg>
       <div class="wm"><b>COONEEN</b><span>GROUP</span></div>
     </div>
@@ -631,13 +693,15 @@
   <section class="band" id="band" hidden>
     <div class="vmain">
       <div class="kicker" id="vmain-kicker">Our value of the month</div>
-      <div class="vmain-text" id="vmain-text"></div>
+      <div class="vmain-text" id="vmain-text"><span></span></div>
     </div>
     <div class="vflip" id="vflip" hidden>
-      <div class="kicker">In practice</div>
+      <div class="vhead">
+        <span class="kicker">In practice</span>
+        <span class="vnum" id="vnum"></span>
+      </div>
       <div class="vstage" id="vstage">
-        <div class="vnum" id="vnum"></div>
-        <div class="vtext" id="vtext"></div>
+        <div class="vtext" id="vtext"><span></span></div>
       </div>
       <div class="dots" id="dots"></div>
     </div>
@@ -912,21 +976,51 @@
     el.classList.add(cls);
   }
 
-  function sizeClass(text, base, mid, small) {
-    var n = String(text || "").length;
-    if (n <= mid)   return "";
-    if (n <= small) return base + "--md";
-    return base + "--sm";
+  // Some feeds store the line breaks in a message as markup rather than as
+  // newlines, so the escaped copy has to have those put back or the tags are
+  // read out on the wall as words.
+  var BR_TAG = /&lt;br\s*\/?&gt;/gi;
+
+  function message(text) {
+    return esc(text)
+      .replace(BR_TAG, "<br>")
+      .replace(/\r?\n/g, "<br>")
+      .replace(/(?:<br>\s*){2,}/g, "<br>");
+  }
+
+  // Steps the size down until the text fits the box it has to live in. The
+  // character count says nothing about how wide a panel is or how tall the
+  // screen is, so the box itself is what gets asked.
+  function fitBox(box, max, min) {
+    var span = box && box.firstElementChild;
+    if (!span) return;
+
+    // Measured against the room inside the padding, not the padding box, or
+    // the text is allowed to run into the edges before it starts shrinking.
+    var pad = getComputedStyle(box);
+    var room = box.clientHeight
+             - parseFloat(pad.paddingTop) - parseFloat(pad.paddingBottom);
+    if (!(room > 0)) return;
+
+    var size = max;
+    box.style.fontSize = size + "rem";
+
+    var guard = 60;
+    while (guard-- && size > min && span.scrollHeight > room + 1) {
+      size -= 0.05;
+      box.style.fontSize = size.toFixed(2) + "rem";
+    }
   }
 
   // ------------------------------------------------------------- stats rail
 
   function bar(name, count, max) {
-    return '<div class="sbar' + (count ? "" : " sbar--zero") + '" style="--c:' + color(name) + '">' +
+    return '<div class="sbar' + (count ? "" : " sbar--zero") +
+           '" data-count="' + count + '" style="--c:' + color(name) + '">' +
              '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + icon(name) + '"/></svg>' +
              '<span class="sn">' + esc(name) + "</span>" +
-             '<span class="sc">' + count + "</span>" +
              '<span class="strk"><i style="width:' + Math.round((count / max) * 100) + '%"></i></span>' +
+             '<span class="sc">' + count + "</span>" +
            "</div>";
   }
 
@@ -946,6 +1040,7 @@
 
     var top   = (d.recipients && d.recipients[0]) || null;
     var giver = (d.givers && d.givers[0]) || null;
+    lastStats = d;
 
     $("stats").innerHTML =
       '<div class="skicker">' +
@@ -956,18 +1051,46 @@
       '<div class="sbars">' + names.map(function (n) {
         return bar(n, counts[n] || 0, max);
       }).join("") + "</div>" +
-      '<div class="spair">' +
-        (top ? '<div><div class="skicker">Most thanked</div>' +
-               '<div class="sname">' + esc(top.name) +
-               ' <small>&times;' + esc(top.count) + "</small></div></div>" : "") +
-        (giver ? '<div><div class="skicker">Most thanks given</div>' +
-                 '<div class="sname">' + esc(giver.name) +
-                 ' <small>&times;' + esc(giver.count) + "</small></div></div>" : "") +
-      "</div>" +
-      '<div class="supd">' + (d.fetched_at ? "Updated " + esc(ago(d.fetched_at)) : "") + "</div>";
+      (top ? '<div data-trim><div class="skicker">Most thanked</div>' +
+             '<div class="sname">' + esc(top.name) +
+             ' <small>&times;' + esc(top.count) + "</small></div></div>" : "") +
+      (giver ? '<div data-trim><div class="skicker">Most thanks given</div>' +
+               '<div class="sname">' + esc(giver.name) +
+               ' <small>&times;' + esc(giver.count) + "</small></div></div>" : "") +
+      '<div class="supd" data-trim>' +
+        (d.fetched_at ? "Updated " + esc(ago(d.fetched_at)) : "") + "</div>";
+
+    trimRail();
+  }
+
+  // Nothing on the rail may spill past it, so whatever will not fit is given
+  // up whole rather than shown as half a row: the least used values first,
+  // then the blocks underneath them from the bottom up.
+  function trimRail() {
+    var rail = $("stats");
+    var fits = function () { return rail.scrollHeight <= rail.clientHeight + 1; };
+    var bars = rail.querySelector(".sbars");
+    var guard = 30;
+
+    while (guard-- && !fits() && bars && bars.children.length > 1) {
+      // The running order on screen stays as it is; what goes is whichever
+      // value was handed out least, wherever it happens to sit in that order.
+      var rows = bars.children, worst = 0;
+      for (var i = 1; i < rows.length; i++) {
+        if (+rows[i].dataset.count <= +rows[worst].dataset.count) worst = i;
+      }
+      bars.removeChild(rows[worst]);
+    }
+
+    var blocks = rail.querySelectorAll("[data-trim]");
+    for (var k = blocks.length - 1; k >= 0 && !fits(); k--) blocks[k].hidden = true;
   }
 
   // ------------------------------------------------------------------- cards
+
+  function sameThanks(a, b) {
+    return !!a && !!b && a.message === b.message && a.giver === b.giver;
+  }
 
   function cardHTML(t) {
     var c    = color(t.badge);
@@ -983,8 +1106,7 @@
                  '<div class="crecip">' + esc(t.recipient) + "</div>" +
                "</div>" +
              "</div>" +
-             '<div class="cmsg ' + sizeClass(msg, "cmsg", 95, 200) + '"><span>' +
-               esc(msg) + "</span></div>" +
+             '<div class="cmsg"><span>' + message(msg) + "</span></div>" +
              '<div class="cfoot">' +
                "<span>" + (t.giver ? "from <b>" + esc(t.giver) + "</b>" : "") + "</span>" +
                '<span class="cdate">' + esc(when) + "</span>" +
@@ -994,7 +1116,14 @@
 
   // Two slots drawing from one list, so the same thanks is never up twice, and
   // two timers half a cycle apart, so they never turn over together.
+  // The last payload the rail was drawn from, so a resize can draw it again at
+  // the new size instead of living with what was trimmed off at the old one.
+  var lastStats = null;
+
   var items = [], cursor = 0, timers = [], itemSig = "";
+  // What each slot is holding, so the other one can step over a thank you that
+  // went to two people at once rather than showing it twice side by side.
+  var shown = [null, null];
 
   function stopRotation() {
     timers.forEach(clearTimeout);
@@ -1002,14 +1131,33 @@
     timers = [];
   }
 
+  function nextItem(idx) {
+    var other = shown[1 - idx];
+    for (var tries = items.length; tries > 0; tries--) {
+      var item = items[cursor % items.length];
+      cursor++;
+      if (!sameThanks(item, other)) return item;
+    }
+    return items[cursor++ % items.length];
+  }
+
   function fillSlot(idx) {
     var el = $("slot" + idx);
-    if (!items.length) { el.innerHTML = ""; el.classList.add("slot--empty"); return; }
+    if (!items.length) {
+      el.innerHTML = "";
+      el.classList.add("slot--empty");
+      shown[idx] = null;
+      return;
+    }
 
+    var item = nextItem(idx);
+    shown[idx] = item;
     el.classList.remove("slot--empty");
-    el.innerHTML = cardHTML(items[cursor % items.length]);
-    cursor++;
-    replay(el.firstElementChild, "in");
+    el.innerHTML = cardHTML(item);
+
+    var card = el.firstElementChild;
+    replay(card, "in");
+    fitBox(card.querySelector(".cmsg"), 1.35, 0.72);
   }
 
   function renderWall(list) {
@@ -1023,6 +1171,7 @@
     itemSig = sig;
     items   = list;
     cursor  = 0;
+    shown   = [null, null];
 
     stopRotation();
     fillSlot(0);
@@ -1047,10 +1196,11 @@
     var v = rest[i];
     if (!v) return;
 
-    $("vnum").textContent  = "0" + (v.n || i + 1);
-    var text = $("vtext");
-    text.textContent = v.text || "";
-    text.className   = "vtext " + sizeClass(v.text, "vtext", 110, 240);
+    $("vnum").textContent = "0" + (v.n || i + 1);
+
+    var box = $("vtext");
+    box.firstElementChild.textContent = v.text || "";
+    fitBox(box, 1.55, 0.7);
 
     var dots = $("dots").children;
     for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("on", k === i);
@@ -1083,14 +1233,18 @@
     valueSig = sig;
 
     $("band").hidden = false;
+    // The issue picks its own colour in the newsletter editor; the board wears
+    // it too so a screen and an emailed copy of the same issue match.
+    if (n.accent) document.documentElement.style.setProperty("--accent", n.accent);
     $("vmain-kicker").textContent = n.edition ? "Our value of the month" : "Our values";
     var mt = $("vmain-text");
-    mt.textContent = main.text;
-    mt.className   = "vmain-text " + sizeClass(main.text, "vmain-text", 70, 190);
+    mt.firstElementChild.textContent = main.text;
+    fitBox(mt, 2.5, 0.85);
 
     rest = others;
     if (vTimer) { clearInterval(vTimer); vTimer = null; }
 
+    $("band").classList.toggle("band--solo", !rest.length);
     if (!rest.length) { $("vflip").hidden = true; return; }
 
     $("vflip").hidden = false;
@@ -1202,11 +1356,27 @@
 
   // A resize changes the rem scale. Nothing here is measured in JS, so the
   // layout follows on its own once the root has moved.
+  // A resize changes the rem scale and every box with it, so everything that
+  // was fitted to a box has to be fitted again.
+  function refit() {
+    if (lastStats) renderStats(lastStats);
+    if (rest.length) fitBox($("vtext"), 1.55, 0.7);
+    if (!$("band").hidden) fitBox($("vmain-text"), 2.5, 0.85);
+    var msgs = document.querySelectorAll(".cmsg");
+    for (var i = 0; i < msgs.length; i++) fitBox(msgs[i], 1.35, 0.72);
+  }
+
   var resizing;
   window.addEventListener("resize", function () {
     clearTimeout(resizing);
-    resizing = setTimeout(applyScale, 300);
+    resizing = setTimeout(function () { applyScale(); refit(); }, 300);
   });
+
+  // The web font lands after first paint and changes every measurement under
+  // it, so what was fitted against the fallback is fitted again against the
+  // real thing.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
+  setTimeout(refit, 1500);
 
   // Nothing on a wall screen should sleep, but a browser tab that has been
   // backgrounded comes back stale. Catch up on the way in.
