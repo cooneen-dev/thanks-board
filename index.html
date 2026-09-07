@@ -297,7 +297,7 @@
     color: var(--ink-2);
     overflow: hidden;
   }
-  .cmsg span { display: block; }
+  .cmsg span { display: block; overflow-wrap: break-word; }
 
   .cfoot {
     flex: 0 0 auto;
@@ -329,6 +329,8 @@
 
   /* ------------------------------------------------------------ stats rail */
 
+  /* Boxed on all four sides rather than hung off a single rule, so it reads as
+     a panel of its own next to the cards instead of a leftover column. */
   .stats {
     flex: 0 0 15.5rem;
     min-width: 0;
@@ -337,8 +339,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding-left: 0.9rem;
-    border-left: 1px solid var(--line);
+    padding: 0.85rem 0.9rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
   }
   .stats > * { flex: 0 0 auto; }
   .stats [hidden] { display: none; }
@@ -444,7 +449,10 @@
     text-align: center;
     padding: 1.4rem 2rem;
   }
-  .band--solo .vmain-text { max-width: 34ch; }
+  /* A rem measure, not a ch one: ch is a slice of the font size fitBox is busy
+     shrinking, so the box narrowed in step with the text and a long value
+     never caught up with it. */
+  .band--solo .vmain-text { max-width: 38rem; }
 
   .vmain {
     flex: 1 1 52%;
@@ -481,7 +489,13 @@
     line-height: 1.14;
     letter-spacing: -0.02em;
   }
-  .vmain-text span { display: block; white-space: pre-line; }
+  .vmain-text span {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: pre-line;
+    overflow-wrap: break-word;
+  }
 
   .vflip {
     flex: 1 1 48%;
@@ -536,7 +550,13 @@
     font-weight: 800;
     line-height: 1.32;
   }
-  .vtext span { display: block; white-space: pre-line; }
+  .vtext span {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: pre-line;
+    overflow-wrap: break-word;
+  }
 
   .dots { flex: 0 0 auto; display: flex; gap: 0.3rem; }
   .dots i {
@@ -645,10 +665,9 @@
       flex: 0 0 auto;
       flex-direction: row;
       flex-wrap: wrap;
+      align-items: center;
       gap: 1rem;
-      padding: 0.7rem 0 0;
-      border-left: 0;
-      border-top: 1px solid var(--line);
+      padding: 0.7rem 0.9rem;
     }
     .band { flex-direction: column; }
   }
@@ -997,16 +1016,24 @@
 
     // Measured against the room inside the padding, not the padding box, or
     // the text is allowed to run into the edges before it starts shrinking.
-    var pad = getComputedStyle(box);
+    var pad  = getComputedStyle(box);
     var room = box.clientHeight
              - parseFloat(pad.paddingTop) - parseFloat(pad.paddingBottom);
+    var wide = box.clientWidth
+             - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight);
     if (!(room > 0)) return;
 
     var size = max;
     box.style.fontSize = size + "rem";
 
+    // Height alone misses a single word too long to wrap - it does not add a
+    // line, it runs out of the side - so the width is checked with it.
+    var over = function () {
+      return span.scrollHeight > room + 1 || (wide > 0 && span.scrollWidth > wide + 1);
+    };
+
     var guard = 60;
-    while (guard-- && size > min && span.scrollHeight > room + 1) {
+    while (guard-- && size > min && over()) {
       size -= 0.05;
       box.style.fontSize = size.toFixed(2) + "rem";
     }
@@ -1237,17 +1264,22 @@
     // it too so a screen and an emailed copy of the same issue match.
     if (n.accent) document.documentElement.style.setProperty("--accent", n.accent);
     $("vmain-kicker").textContent = n.edition ? "Our value of the month" : "Our values";
-    var mt = $("vmain-text");
-    mt.firstElementChild.textContent = main.text;
-    fitBox(mt, 2.5, 0.85);
 
     rest = others;
     if (vTimer) { clearInterval(vTimer); vTimer = null; }
 
+    // Solo and paired are different sized boxes, so the layout is settled
+    // before the value is measured against it - fitting first and then
+    // narrowing the panel is how a long value ended up clipped.
     $("band").classList.toggle("band--solo", !rest.length);
-    if (!rest.length) { $("vflip").hidden = true; return; }
+    $("vflip").hidden = !rest.length;
 
-    $("vflip").hidden = false;
+    var mt = $("vmain-text");
+    mt.firstElementChild.textContent = main.text;
+    fitBox(mt, 2.5, 0.7);
+
+    if (!rest.length) return;
+
     $("dots").innerHTML = rest.map(function () { return "<i></i>"; }).join("");
 
     vIdx = 0;
@@ -1361,7 +1393,7 @@
   function refit() {
     if (lastStats) renderStats(lastStats);
     if (rest.length) fitBox($("vtext"), 1.55, 0.7);
-    if (!$("band").hidden) fitBox($("vmain-text"), 2.5, 0.85);
+    if (!$("band").hidden) fitBox($("vmain-text"), 2.5, 0.7);
     var msgs = document.querySelectorAll(".cmsg");
     for (var i = 0; i < msgs.length; i++) fitBox(msgs[i], 1.35, 0.72);
   }
