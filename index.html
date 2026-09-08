@@ -606,8 +606,7 @@
   .vflip[hidden] { display: none; }
   .vflip .kicker { color: rgba(255,255,255,.72); }
 
-  /* No overflow rule here: the marks hang outside the text box on purpose and
-     this is what was shearing them. The panel itself is still the backstop. */
+  /* No overflow rule here: the panel itself is the backstop. */
   .vstage {
     flex: 1;
     min-height: 0;
@@ -652,26 +651,6 @@
     color: rgba(255,255,255,.96);
   }
   .vquote span { display: block; position: relative; white-space: pre-line; }
-
-  /* Both marks hang in the panel's own padding, outside the box the words are
-     measured into. They open the passage at its top left and close it at its
-     bottom right, and neither costs the quote a line or a character of width:
-     fitBox never sees them. Sized in rem so they hold still while the text
-     underneath is scaled to fit, and hung off the text itself rather than off
-     the panel, so the opening mark sits level with the first line instead of
-     floating above it. */
-  .vquote span::before,
-  .vquote span::after {
-    position: absolute;
-    font-family: var(--quote);
-    font-size: 2.6rem;
-    font-weight: 900;
-    line-height: 1;
-    color: rgba(255,255,255,.28);
-    pointer-events: none;
-  }
-  .vquote span::before { content: "\201C"; left: -1.5rem; top: -0.16rem; }
-  .vquote span::after  { content: "\201D"; right: -1.5rem; bottom: -0.5rem; }
 
   .vby {
     flex: 0 0 auto;
