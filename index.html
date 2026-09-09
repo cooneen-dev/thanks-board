@@ -358,7 +358,7 @@
     display: flex;
     flex-direction: column;
     font-size: 1rem;
-    gap: 0.5em;
+    gap: 0.46em;
     padding: 0.85rem 0.95rem;
     background: var(--card);
     border: 1px solid var(--line);
@@ -453,7 +453,7 @@
   }
   .strk i { display: block; height: 100%; border-radius: 999px; background: var(--c); }
 
-  .spair { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.45em; }
+  .spair { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.42em; }
   .sname {
     font-size: 1em;
     font-weight: 700;
@@ -465,8 +465,6 @@
   .sname small { font-weight: 700; color: var(--ink-faint); }
   .sname.flick { animation: nameIn 0.45s cubic-bezier(.22,.8,.3,1) both; }
   @keyframes nameIn { from { opacity: 0; transform: translateY(0.25em); } to { opacity: 1; transform: none; } }
-
-  .supd { font-size: 0.68em; color: var(--ink-faint); }
 
   /* ------------------------------------------------------------ value band */
 
@@ -578,6 +576,8 @@
     color: var(--ink-2);
   }
   .vmain-text span { display: block; white-space: pre-line; }
+  .vmain-text .vln { display: block; white-space: normal; }
+  .vmain-text .vln + .vln { margin-top: 0.5em; }
 
   /* Where the value opens with a line of its own, it is given one. The block
      was a slab of one size at one weight, which is what made it heavy. */
@@ -651,6 +651,8 @@
     color: rgba(255,255,255,.96);
   }
   .vquote span { display: block; position: relative; white-space: pre-line; }
+  .vquote .vln { display: block; white-space: normal; }
+  .vquote .vln + .vln { margin-top: 0.5em; }
 
   .vby {
     flex: 0 0 auto;
@@ -844,10 +846,6 @@
       </div>
     </div>
     <div class="vflip" id="vflip" hidden>
-      <div class="vhead">
-        <span class="kicker">In practice</span>
-        <span class="vnum" id="vnum"></span>
-      </div>
       <div class="vstage" id="vstage">
         <div class="vquote" id="vtext"><span></span></div>
         <div class="vby" id="vby" hidden>
@@ -1270,7 +1268,8 @@
       // Taking a glyph out of the middle of a sentence leaves the gap it sat
       // in, and taking one off the end leaves the space before it.
       .replace(/[ \t]{2,}/g, " ")
-      .replace(/[ \t]+([,.!?;:])/g, "$1")
+      .replace(/[ \t]+([,.!?;:)\]}])/g, "$1")
+      .replace(/([([{])[ \t]+/g, "$1")
       .replace(/^[\s\u00b7\u2022|]+/, "")
       .replace(/[\s\u00b7\u2022|]+$/, "")
       .replace(/\n[ \t]+/g, "\n");
@@ -1515,8 +1514,6 @@
     // the rest is current. A wall quietly showing a fortnight-old count with
     // nothing to say so is worse than a wall missing a headcount.
     $("stats").innerHTML =
-      '<div class="skicker">' +
-        (d.window_days ? "Last " + d.window_days + " days" : "Recently") + "</div>" +
       '<div class="sbig"><b>' + esc(d.count) + "</b><span>thank yous</span></div>" +
       '<div class="ssub" data-drop="1">' + esc(d.people_thanked) +
         " colleagues thanked by " + esc(d.people_giving) + "</div>" +
@@ -1526,9 +1523,7 @@
         return bar(n, counts[n] || 0, max);
       }).join("") + "</div>" +
       pairBlock(3, "Most thanked",      "s-top",   topG) +
-      pairBlock(2, "Most thanks given", "s-giver", giverG) +
-      '<div class="supd">' +
-        (d.fetched_at ? "Updated " + esc(ago(d.fetched_at)) : "") + "</div>";
+      pairBlock(2, "Most thanks given", "s-giver", giverG);
 
     runFlicks([{ id: "s-top", list: topG }, { id: "s-giver", list: giverG }]);
 
@@ -1775,6 +1770,7 @@
   // Held so a refit uses the ceiling this issue was sized with, rather than
   // one fixed in the resize handler that knows nothing about the text.
   var vmainMax = 1.6;
+  var VQUOTE_MAX = 1.6;
 
   // The whole board wears the month's value. A Teamwork month is orange on the
   // panel and orange on the rail beside it, so the colour on screen is telling
@@ -1818,12 +1814,39 @@
   // ahead of anything read off the text.
   var ATTR_MAX = 90;
 
+  var VTAG = /(?:&lt;|<)\s*\/?\s*(?:br|p)(?:\s[^>]*)?\s*\/?\s*(?:&gt;|>)/gi;
+
+  function deTag(s) {
+    return String(s == null ? "" : s)
+      .replace(VTAG, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/[ \t]*\n[ \t]*/g, "\n")
+      .replace(/\n{2,}/g, "\n")
+      .replace(/^\n+|\n+$/g, "");
+  }
+
+  function flowBody(s) {
+    return deTag(s)
+      .replace(/([^\n.!?:;\u2026)"'\u201d\u2019])\n(?=[a-z0-9\u00df-\u00ff])/g, "$1 ")
+      .replace(/\n{2,}/g, "\n")
+      .replace(/^\n+|\n+$/g, "");
+  }
+
+  function paras(text) {
+    return String(text == null ? "" : text)
+      .split(/\n/)
+      .map(function (p) { return p.trim(); })
+      .filter(Boolean)
+      .map(function (p) { return '<span class="vln">' + esc(p) + "</span>"; })
+      .join("");
+  }
+
   function splitQuote(v) {
     var name = clean((v && (v.author || v.name || v.by)) || "");
     var role = clean((v && (v.role || v.job || v.team)) || "");
-    var text = clean((v && v.text) || "");
+    var text = deTag(clean((v && v.text) || ""));
 
-    if (name) return { name: name, role: role, text: text };
+    if (name) return { name: name, role: role, text: flowBody(text) };
 
     var lines = text.split(/\r?\n/);
     var head  = (lines[0] || "").trim();
@@ -1840,13 +1863,13 @@
       head.split(/\s+/).length <= 12 &&
       body.length >= 40;
 
-    if (!looksLikeName) return { name: "", role: "", text: text };
+    if (!looksLikeName) return { name: "", role: "", text: flowBody(text) };
 
     var parts = head.split(/\s*(?:,|\u2013|\u2014|\s-\s)\s*/).filter(Boolean);
     return {
       name: parts.shift(),
       role: parts.join("  \u00b7  "),
-      text: body
+      text: flowBody(body)
     };
   }
 
@@ -1888,7 +1911,8 @@
   var LEAD_MAX = 60;
 
   function splitLead(text) {
-    var lines = String(text || "").split(/\r?\n/);
+    var src   = deTag(text);
+    var lines = src.split(/\r?\n/);
     var head  = (lines[0] || "").trim();
     var body  = lines.slice(1).join("\n").trim();
 
@@ -1898,15 +1922,13 @@
       !/[.!?,;:]$/.test(head) &&
       head.split(/\s+/).length <= 9;
 
-    return looksLikeHeading ? { head: head, body: body }
-                            : { head: "", body: String(text || "") };
+    return looksLikeHeading ? { head: head, body: flowBody(body) }
+                            : { head: "", body: flowBody(src) };
   }
 
   function showValue(i) {
     var v = rest[i];
     if (!v) return;
-
-    $("vnum").textContent = "0" + (v.n || i + 1);
 
     var q = splitQuote(v);
 
@@ -1926,7 +1948,7 @@
     fitBy();
 
     var box = $("vtext");
-    box.firstElementChild.textContent = q.text;
+    box.firstElementChild.innerHTML = paras(q.text);
     // A long passage on a screen that has been zoomed in has to be allowed
     // all the way down: clipped words are worse than small ones, and the
     // floor is the only thing standing between the two.
@@ -1934,7 +1956,7 @@
     // size is decided by the room the quote has rather than by a number: a
     // short one now fills the panel instead of stopping at 1.6 with a quarter
     // of the box empty under it. A long one still shrinks exactly as before.
-    fitBox(box, 2.6, 0.34);
+    fitBox(box, VQUOTE_MAX, 0.34);
 
     var dots = $("dots").children;
     for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("on", k === i);
@@ -1989,7 +2011,7 @@
     var mt = $("vmain-text");
     $("vmain-lead").textContent = lead.head;
     $("vmain-lead").hidden = !lead.head;
-    mt.querySelector("span").textContent = lead.body;
+    mt.querySelector("span").innerHTML = paras(lead.body);
 
     // A month whose value is a phrase gets the room a phrase can use; a month
     // whose value is three paragraphs does not get to set them at the same
@@ -2186,7 +2208,7 @@
   function refit() {
     if (lastStats) renderStats(lastStats);
     fitKickers();
-    if (rest.length) { fitBy(); fitBox($("vtext"), 2.6, 0.34); }
+    if (rest.length) { fitBy(); fitBox($("vtext"), VQUOTE_MAX, 0.34); }
     if (!$("band").hidden) fitBox($("vmain-text"), vmainMax, 0.45);
     var msgs = document.querySelectorAll(".cmsg");
     for (var i = 0; i < msgs.length; i++) fitBox(msgs[i], 1.35, 0.72);
