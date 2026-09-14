@@ -45,6 +45,12 @@
     --accent: #e87722;
     --band:   #b85a10;
 
+    /* Plain rgba versions of the tints, replaced from applyAccent whenever the
+       colours above change. No color-mix(): the Yodeck player cannot read it. */
+    --accent-tint:  rgba(232,119,34,.09);
+    --accent-track: rgba(232,119,34,.22);
+    --accent-ink:   #cb6617;
+
     /* One family on the whole board. What separates a quote from a caption
        here is weight and size, not a second typeface. */
     --quote: 'Nunito', system-ui, sans-serif;
@@ -262,7 +268,7 @@
     align-items: center;
     gap: 0.6rem;
     padding: 0.7rem 0.9rem;
-    background: color-mix(in srgb, var(--c) 9%, transparent);
+    background: var(--ct, rgba(0,0,0,.04));
     border-bottom: 1px solid var(--line-soft);
   }
   .cav {
@@ -486,8 +492,9 @@
        pale to be read as text in a Positivity or Trust month, and the band
        colour is darker than the badge people know; three parts band to two
        parts badge clears 3:1 for all six, on the panel and on the tint. On a
-       dark panel the badge colour is the readable one as it is. */
-    --accent-ink: color-mix(in srgb, var(--band) 60%, var(--accent));
+       dark panel the badge colour is the readable one as it is. The mix is
+       worked out in applyAccent, not with color-mix(): the Yodeck player's
+       Chromium is too old for it and drops the whole declaration. */
   }
   html[data-theme="dark"] .band { --accent-ink: var(--accent); }
   .band[hidden] { display: none; }
@@ -648,7 +655,7 @@
     flex-direction: column;
     gap: 0.6rem;
     padding: 1.2rem 1.75rem;
-    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    background: var(--accent-tint);
     color: var(--ink);
   }
   .vflip[hidden] { display: none; }
@@ -742,12 +749,12 @@
     height: 0.26rem;
     border-radius: 999px;
     overflow: hidden;
-    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    background: var(--accent-track);
   }
   .dots i::after {
     content: "";
     position: absolute;
-    inset: 0;
+    top: 0; right: 0; bottom: 0; left: 0;
     border-radius: inherit;
     background: var(--band);
     transform: scaleX(0);
@@ -778,7 +785,7 @@
 
   .overlay {
     position: fixed;
-    inset: 0;
+    top: 0; right: 0; bottom: 0; left: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -800,7 +807,7 @@
      board with a network problem, and only one of the two is worth reading. */
   .gate {
     position: fixed;
-    inset: 0;
+    top: 0; right: 0; bottom: 0; left: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1272,6 +1279,25 @@
   var ICON_FALLBACK = BADGE_ICONS.Results;
 
   function color(badge) { return BADGE_COLORS[badge] || BADGE_FALLBACK; }
+
+  // Tints worked out here rather than with CSS color-mix(), which the Yodeck
+  // player's older Chromium does not understand: it throws the rule away and
+  // the shading behind the cards and the value simply disappears.
+  function rgbOf(hex) {
+    var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex || "").trim());
+    if (!m) return null;
+    var h = m[1].length === 3 ? m[1].replace(/./g, "$&$&") : m[1];
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  function tint(hex, alpha) {
+    var c = rgbOf(hex);
+    return c ? "rgba(" + c.join(",") + "," + alpha + ")" : "rgba(0,0,0," + (alpha / 2) + ")";
+  }
+  function mixHex(a, b, wa) {
+    var x = rgbOf(a), y = rgbOf(b);
+    if (!x || !y) return a;
+    return "rgb(" + [0, 1, 2].map(function (i) { return Math.round(x[i] * wa + y[i] * (1 - wa)); }).join(",") + ")";
+  }
   function icon(badge)  { return BADGE_ICONS[badge]  || ICON_FALLBACK; }
 
   // ------------------------------------------------------------------- utils
@@ -1676,7 +1702,7 @@
     var when = t.date_iso ? ago(t.date_iso) : (t.date || "");
     var msg  = t.message || "";
 
-    return '<div class="card" style="--c:' + c + '">' +
+    return '<div class="card" style="--c:' + c + ';--ct:' + tint(c, 0.09) + '">' +
              '<div class="chead">' +
                (badgeImg(t.badge, "cav cav--img") ||
                 '<div class="cav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' +
@@ -1881,6 +1907,13 @@
       root.removeProperty("--accent");
       root.removeProperty("--band");
     }
+
+    var cs = getComputedStyle(document.documentElement);
+    var accent = cs.getPropertyValue("--accent").trim();
+    var band   = cs.getPropertyValue("--band").trim();
+    root.setProperty("--accent-tint",  tint(accent, 0.09));
+    root.setProperty("--accent-track", tint(accent, 0.22));
+    root.setProperty("--accent-ink",   mixHex(band, accent, 0.6));
 
     // The caller wants this too: the panel's badge is the same decision as
     // the panel's colour, and working it out twice invites the two to differ.
