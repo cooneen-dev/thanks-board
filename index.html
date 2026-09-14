@@ -468,14 +468,28 @@
 
   /* ------------------------------------------------------------ value band */
 
+  /* Carried as a panel, the same as the recognition section above it. The
+     month's colour is kept to the things that name the value - the badge,
+     the label, the count, and a tint behind the passages at the strength the
+     thanks cards use for their heading strip - rather than poured over half
+     the band, which made the bottom of the board heavier than the top. */
   .band {
     flex: 1 1 43%;
     min-height: 0;
     display: flex;
+    background: var(--panel);
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow);
+
+    /* Type in the month's colour on a light panel. The badge colour is too
+       pale to be read as text in a Positivity or Trust month, and the band
+       colour is darker than the badge people know; three parts band to two
+       parts badge clears 3:1 for all six, on the panel and on the tint. On a
+       dark panel the badge colour is the readable one as it is. */
+    --accent-ink: color-mix(in srgb, var(--band) 60%, var(--accent));
   }
+  html[data-theme="dark"] .band { --accent-ink: var(--accent); }
   .band[hidden] { display: none; }
 
   /* With nothing to cycle there is no second half, and a value stretched
@@ -490,6 +504,13 @@
   }
   .band--solo .vmain-text { max-width: 34ch; }
   .band--solo .vmain-inner { justify-content: center; }
+  .band--solo .vcount { align-self: stretch; }
+  .band--solo .vcount .sbig { justify-content: center; }
+
+  /* A value that is only a name leaves most of its half empty, so where there
+     are passages beside it they are given the room instead. */
+  .band--title .vmain { flex-basis: 40%; }
+  .band--title .vflip { flex-basis: 60%; }
 
   /* The month's value, as the badge people are actually given, beside the
      wording rather than above it: the panel keeps one line of thought and the
@@ -539,7 +560,6 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 1.2rem 1.6rem;
-    background: var(--panel);
   }
 
   /* Static labels. Held to one line and scaled by fitLine to whatever width
@@ -551,7 +571,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
-    color: var(--accent);
+    color: var(--accent-ink, var(--accent));
   }
 
   /* Sized to the space it has rather than to how many characters it holds:
@@ -591,6 +611,34 @@
   }
   .vmain-lead[hidden] { display: none; }
 
+  /* Most months the value arrives as a name, or a phrase no longer than a
+     heading, with nothing under it. That is set the way the thanks cards set
+     a colleague's name - heavy enough to be read first, in the names' ink -
+     rather than at paragraph weight in a box built for paragraphs. */
+  .vmain-text--title { font-weight: 700; line-height: 1.15; color: var(--ink); }
+
+  /* The month's value, counted: how many of the fortnight's thanks were given
+     for it. Set in the rail's own style for its total, so it reads as the
+     same kind of number as the one above it, in the month's colour. */
+  .vcount {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line-soft);
+  }
+  .vcount[hidden] { display: none; }
+  .vcount .sbig { font-size: 1rem; white-space: nowrap; }
+  .vcount .sbig b { color: var(--accent-ink, var(--accent)); }
+  .vcount-ask {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .vflip {
     flex: 1 1 48%;
     min-width: 0;
@@ -600,11 +648,11 @@
     flex-direction: column;
     gap: 0.6rem;
     padding: 1.2rem 1.75rem;
-    background: var(--band);
-    color: #fff;
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    color: var(--ink);
   }
   .vflip[hidden] { display: none; }
-  .vflip .kicker { color: rgba(255,255,255,.72); }
+  .vflip .kicker { color: var(--ink-soft); }
 
   /* No overflow rule here: the panel itself is the backstop. */
   .vstage {
@@ -631,7 +679,7 @@
     font-size: 0.85rem;
     font-weight: 900;
     letter-spacing: 0.1em;
-    color: rgba(255,255,255,.62);
+    color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
   }
 
@@ -648,7 +696,7 @@
     font-size: 1.5rem;
     font-weight: 400;
     line-height: 1.4;
-    color: rgba(255,255,255,.96);
+    color: var(--ink-2);
   }
   .vquote span { display: block; position: relative; white-space: pre-line; }
   .vquote .vln { display: block; white-space: normal; }
@@ -658,7 +706,7 @@
     flex: 0 0 auto;
     font-size: 1rem;
     padding-top: 0.55em;
-    border-top: 1px solid rgba(255,255,255,.28);
+    border-top: 1px solid var(--line);
   }
   .vby[hidden] { display: none; }
   /* The only heavy text left on the board. It is bold because nothing else
@@ -676,21 +724,39 @@
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.68);
+    color: var(--ink-soft);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .dots { flex: 0 0 auto; display: flex; gap: 0.3rem; }
+  /* One segment per passage. The one on screen fills over the time it is
+     held, so someone reading from across the room can see it is about to turn
+     over; the ones before it stay full. Only transform is animated, which the
+     player can do without repainting the band. */
+  .dots { flex: 0 0 auto; display: flex; gap: 0.35rem; }
+  .dots[hidden] { display: none; }
   .dots i {
-    width: 1.1rem;
-    height: 0.22rem;
+    position: relative;
+    width: 1.6rem;
+    height: 0.26rem;
     border-radius: 999px;
-    background: rgba(255,255,255,.32);
-    transition: background 0.3s;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
   }
-  .dots i.on { background: #fff; }
+  .dots i::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--band);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  html[data-theme="dark"] .dots i::after { background: var(--accent); }
+  .dots i.done::after { transform: none; }
+  .dots i.on::after { animation: vfill var(--vspeed, 40s) linear both; }
+  @keyframes vfill { to { transform: none; } }
 
   /* ---------------------------------------------------------------- footer */
 
@@ -844,6 +910,10 @@
           </div>
         </div>
       </div>
+      <div class="vcount" id="vcount" hidden>
+        <div class="sbig" id="vcount-big"><b id="vcount-n"></b><span id="vcount-label"></span></div>
+        <div class="vcount-ask" id="vcount-ask"></div>
+      </div>
     </div>
     <div class="vflip" id="vflip" hidden>
       <div class="vstage" id="vstage">
@@ -987,6 +1057,10 @@
   var VBADGE = Math.max(0, Math.min(20, parseFloat(cfg("vbadge") || "5.5")));
   if (isNaN(VBADGE)) VBADGE = 5.5;
   document.documentElement.style.setProperty("--vbadge", VBADGE + "rem");
+
+  // The segments under the passages fill over the time a passage is held, so
+  // the stylesheet is told what that time is rather than guessing at it.
+  document.documentElement.style.setProperty("--vspeed", VSPEED + "s");
 
   function applyScale() {
     if (SCALE === 1) return;
@@ -1528,6 +1602,12 @@
     runFlicks([{ id: "s-top", list: topG }, { id: "s-giver", list: giverG }]);
 
     trimRail();
+
+    // The band counts the month's value off this same payload, so the two
+    // numbers on the board can never disagree. Showing or hiding the count
+    // changes the room the value has, so the value is fitted again after it.
+    renderCount();
+    if (!$("band").hidden) fitBox($("vmain-text"), vmainMax, 0.45);
   }
 
   // Nothing on the rail may spill past it. The six values are the whole point
@@ -1767,6 +1847,10 @@
 
   var rest = [], vIdx = 0, vTimer = null, valueSig = "";
 
+  // The value this month's issue names, if it names one: what the band's
+  // count is counted against.
+  var valueName = null;
+
   // Held so a refit uses the ceiling this issue was sized with, rather than
   // one fixed in the resize handler that knows nothing about the text.
   var vmainMax = 1.6;
@@ -1926,6 +2010,48 @@
                             : { head: "", body: flowBody(src) };
   }
 
+  // The same tests splitLead puts a heading through, applied to the whole of
+  // the text: short, one line, not ending like a sentence. A value that passes
+  // is a name to be read at a glance, not a passage to be read through.
+  var TITLE_MAX = 2.6;
+
+  function looksLikeTitle(s) {
+    s = String(s || "").trim();
+    return !!s &&
+      s.length <= LEAD_MAX &&
+      s.indexOf("\n") === -1 &&
+      !/[.!?,;:]$/.test(s) &&
+      s.split(/\s+/).length <= 9;
+  }
+
+  // Counted from the rail's payload and drawn from both sides: the thanks
+  // arrive every minute and the issue every ten, and either can land first.
+  function renderCount() {
+    var box = $("vcount");
+    if (!valueName || !lastStats || $("band").hidden) { box.hidden = true; return; }
+
+    var count = 0;
+    (lastStats.badges || []).forEach(function (b) {
+      if (b.badge === valueName) count = parseInt(b.count, 10) || 0;
+    });
+
+    // Nobody has used it yet this fortnight. The rail leaves a value like that
+    // off rather than draw an empty bar, because on a wall a nought reads as a
+    // verdict on the company; here it is put as an invitation instead.
+    $("vcount-n").textContent = count;
+    $("vcount-n").hidden = !count;
+    $("vcount-label").textContent = count
+      ? (count === 1 ? "thank you" : "thank yous") + " for " + valueName
+      : "Seen " + valueName + " in action?";
+    $("vcount-ask").textContent = count
+      ? "Seen " + valueName + " in action? Say thanks in PeopleHR."
+      : "Be the first to say thanks for it in PeopleHR.";
+
+    box.hidden = false;
+    fitLine($("vcount-big"), 1, 0.5);
+    fitLine($("vcount-ask"), 0.85, 0.45);
+  }
+
   function showValue(i) {
     var v = rest[i];
     if (!v) return;
@@ -1958,8 +2084,13 @@
     // of the box empty under it. A long one still shrinks exactly as before.
     fitBox(box, VQUOTE_MAX, 0.34);
 
+    // Full behind, filling on the one now showing, empty ahead.
     var dots = $("dots").children;
-    for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("on", k === i);
+    for (var k = 0; k < dots.length; k++) {
+      dots[k].classList.toggle("done", k < i);
+      dots[k].classList.remove("on");
+    }
+    if (dots[i]) replay(dots[i], "on");
 
     replay($("vstage"), "in");
   }
@@ -1980,6 +2111,7 @@
     if (!main || !main.text) {
       $("band").hidden = true;
       valueSig = "";
+      valueName = null;
       if (vTimer) { clearInterval(vTimer); vTimer = null; }
       return;
     }
@@ -1993,6 +2125,7 @@
 
     $("band").hidden = false;
     var vname = applyAccent(n, main.text);
+    valueName = vname;
 
     // Only ever the artwork for a value actually named this month. Where the
     // issue names none, the panel goes back to being wording alone rather
@@ -2004,14 +2137,28 @@
 
     $("vmain-kicker").textContent = n.edition ? "Our value of the month" : "Our values";
     var lead = splitLead(clean(main.text));
+    var title = !lead.head && looksLikeTitle(lead.body);
     // Keyed on whether a heading was found, not on whether there is body text:
     // there is always body text, so the old test picked the small size every
     // time and a one-word value came out set like a paragraph.
-    vmainMax = lead.head ? 1.05 : 1.6;
+    vmainMax = lead.head ? 1.05 : (title ? TITLE_MAX : 1.6);
     var mt = $("vmain-text");
+    mt.classList.toggle("vmain-text--title", title);
     $("vmain-lead").textContent = lead.head;
     $("vmain-lead").hidden = !lead.head;
     mt.querySelector("span").innerHTML = paras(lead.body);
+
+    rest = others;
+    if (vTimer) { clearInterval(vTimer); vTimer = null; }
+
+    // Everything that changes the band's proportions is settled first - solo
+    // or not, a name or a paragraph, a count under it or not - and only then
+    // is anything fitted to them. The other way round, the value was measured
+    // against a panel that was about to change size.
+    $("band").classList.toggle("band--solo", !rest.length);
+    $("band").classList.toggle("band--title", title && rest.length > 0);
+    $("vflip").hidden = !rest.length;
+    renderCount();
 
     // A month whose value is a phrase gets the room a phrase can use; a month
     // whose value is three paragraphs does not get to set them at the same
@@ -2020,14 +2167,11 @@
     fitBox(mt, vmainMax, 0.45);
     fitKickers();
 
-    rest = others;
-    if (vTimer) { clearInterval(vTimer); vTimer = null; }
+    if (!rest.length) return;
 
-    $("band").classList.toggle("band--solo", !rest.length);
-    if (!rest.length) { $("vflip").hidden = true; return; }
-
-    $("vflip").hidden = false;
     $("dots").innerHTML = rest.map(function () { return "<i></i>"; }).join("");
+    // A single passage is not cycling, so there is nothing to count down.
+    $("dots").hidden = rest.length < 2;
 
     vIdx = 0;
     showValue(0);
